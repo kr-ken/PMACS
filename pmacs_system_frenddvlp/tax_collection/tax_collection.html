@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMACS - Vendor Tax Collection</title>
+    <link rel="stylesheet" href="tax_collection.css">
+    <link rel="stylesheet" href="transitions/page-transitions.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <div class="nav-top-row">
+            <div class="logo-area">
+                <div class="logo-icon"><img src="../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
+                <h2>PMACS</h2>
+            </div>
+            <div class="top-links">
+                <a href="#">SETTINGS</a>
+                <a href="#">LOGOUT</a>
+            </div>
+        </div>
+        
+        <nav class="main-menu">
+            <a href="tax_collection.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
+            <a href="dashboard/dashboard.html" class="menu-item" data-no-transition>DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
+            <a href="notifications/notifications.html" class="menu-item">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="header-left">
+                <div class="title-area">
+                    <h1>VENDOR TAX COLLECTION</h1>
+                    <p>RECORDS TAX AND ATTENDANCE OF VENDORS</p>
+                    <h2 class="date-display" id="currentDate">XXXXXX XX XXXX (DATE)</h2>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search vendors...">
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="taxTable">
+                <thead>
+                    <tr>
+                        <th>VENDOR NAME</th>
+                        <th>STALL TYPE</th>
+                        <th class="center-col">ATTENDANCE</th>
+                        <th class="center-col">TAX</th>
+                    </tr>
+                </thead>
+                <tbody id="vendor-list">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="transitions/page-transitions.js" defer></script>
+    <script type="module" src="tax_collection.js"></script>
+</body>
+</html>

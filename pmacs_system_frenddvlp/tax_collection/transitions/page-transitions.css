@@ -1,0 +1,10 @@
+/* Page transitions - Smooth fade without white flash */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    opacity: 1;
+    transition: opacity 200ms ease-out;
+}

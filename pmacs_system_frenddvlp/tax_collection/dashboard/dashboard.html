@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMACS - Dashboard</title>
+    <link rel="stylesheet" href="../tax_collection.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <div class="nav-top-row">
+            <div class="logo-area">
+                <div class="logo-icon"><img src="../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
+                <h2>PMACS</h2>
+            </div>
+            <div class="top-links">
+                <a href="#">SETTINGS</a>
+                <a href="#">LOGOUT</a>
+            </div>
+        </div>
+        
+        <nav class="main-menu">
+            <a href="../tax_collection.html" class="menu-item">VENDOR <i class="fa-solid fa-address-card"></i></a>
+            <a href="dashboard.html" class="menu-item active" data-no-transition>DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
+            <a href="../notifications/notifications.html" class="menu-item">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="title-area">
+                <h1>COLLECTION DASHBOARD</h1>
+                <p>SUMMARY OF TODAY'S PERFORMANCE</p>
+            </div>
+        </div>
+        
+        <!-- Row 1: Total Collected -->
+        <div class="stats-row">
+            <div class="stat-card full-width">
+                <div class="stat-header">
+                    <div class="stat-icon money">
+                        <i class="fa-solid fa-peso-sign"></i>
+                    </div>
+                    <div class="stat-label">TOTAL COLLECTED</div>
+                </div>
+                <div class="stat-content">
+                    <div class="pie-chart-container">
+                        <svg class="pie-chart" viewBox="0 0 100 100">
+                            <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
+                            <circle class="pie-paid" cx="50" cy="50" r="40" id="pie-collected"></circle>
+                        </svg>
+                        <div class="pie-center">
+                            <span class="pie-value" id="stat-total-money">P0</span>
+                        </div>
+                    </div>
+                    <div class="pie-legend">
+                        <div class="legend-item">
+                            <span class="legend-color paid"></span>
+                            <span class="legend-text">Paid: <strong id="legend-paid">P0</strong></span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color pending"></span>
+                            <span class="legend-text">Unpaid: <strong id="legend-unpaid">P0</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Row 2: Pending Tax with Collected -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon pending">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div class="stat-label">PENDING TAX</div>
+                </div>
+                <div class="stat-value" id="stat-pending">0</div>
+                <div class="stat-subtitle">vendors pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon collected">
+                        <i class="fa-solid fa-check-circle"></i>
+                    </div>
+                    <div class="stat-label">COLLECTED</div>
+                </div>
+                <div class="stat-value" id="stat-collected">0</div>
+                <div class="stat-subtitle">vendors paid</div>
+            </div>
+        </div>
+        
+        <!-- Row 3: Attendance Rate -->
+        <div class="stats-row">
+            <div class="stat-card full-width">
+                <div class="stat-header">
+                    <div class="stat-icon attendance">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="stat-label">ATTENDANCE RATE</div>
+                </div>
+                <div class="stat-content">
+                    <div class="pie-chart-container">
+                        <svg class="pie-chart" viewBox="0 0 100 100">
+                            <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
+                            <circle class="pie-present" cx="50" cy="50" r="40" id="pie-attendance"></circle>
+                        </svg>
+                        <div class="pie-center">
+                            <span class="pie-value" id="stat-attendance">0%</span>
+                        </div>
+                    </div>
+                    <div class="pie-legend">
+                        <div class="legend-item">
+                            <span class="legend-color present"></span>
+                            <span class="legend-text">Present: <strong id="legend-present">0</strong></span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color absent"></span>
+                            <span class="legend-text">Absent: <strong id="legend-absent">0</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>
