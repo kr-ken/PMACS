@@ -1,0 +1,56 @@
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f6f8;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.details-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 32px;
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+}
+
+h1 {
+    color: #2d3e50;
+    margin-bottom: 24px;
+}
+
+#vendor-details-content {
+    text-align: left;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 12px 20px;
+}
+
+#vendor-details-content p {
+    margin: 4px 0;
+}
+
+#vendor-details-content p strong {
+    color: #6c7a89;
+}
+
+#report-link {
+    display: inline-block;
+    margin-top: 24px;
+    padding: 12px 24px;
+    background-color: #4e9af1;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+#report-link:hover {
+    background-color: #3b82c4;
+}
