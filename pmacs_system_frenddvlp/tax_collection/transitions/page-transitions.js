@@ -31,43 +31,42 @@
                 return;
             }
             
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                
-                // Immediate fade out - no white flash
-                document.body.style.transition = `opacity ${DURATION}ms ease-in`;
-                document.body.style.opacity = '0';
-                
-                // Navigate after transition completes
-                setTimeout(() => {
-                    window.location.href = a.href;
-                }, DURATION);
-            });
+            // REMOVED: Comment out the fade effect
+            // a.addEventListener('click', (e) => {
+            //     e.preventDefault();
+            //     
+            //     // Immediate fade out - no white flash
+            //     document.body.style.transition = `opacity ${DURATION}ms ease-in`;
+            //     document.body.style.opacity = '0';
+            //     
+            //     // Navigate after transition completes
+            //     setTimeout(() => {
+            //         window.location.href = a.href;
+            //     }, DURATION);
+            // });
             
             a.dataset.transitionAttached = 'true';
         });
     }
     
-    // Restore opacity when page loads
-    window.addEventListener('load', () => {
-        document.body.style.transition = `opacity ${DURATION}ms ease-out`;
-        document.body.style.opacity = '1';
-    });
-    
-    // Handle pageshow event (back/forward navigation)
-    window.addEventListener('pageshow', () => {
-        document.body.style.transition = `opacity ${DURATION}ms ease-out`;
-        document.body.style.opacity = '1';
-    });
-    
-    // Initial setup - ensure body has proper transition
-    document.body.style.transition = `opacity ${DURATION}ms ease-out`;
-    document.body.style.opacity = '1';
+    // REMOVED: Don't manipulate opacity on load
+    // window.addEventListener('load', () => {
+    //     document.body.style.transition = `opacity ${DURATION}ms ease-out`;
+    //     document.body.style.opacity = '1';
+    // });
+    // 
+    // window.addEventListener('pageshow', () => {
+    //     document.body.style.transition = `opacity ${DURATION}ms ease-out`;
+    //     document.body.style.opacity = '1';
+    // });
+    // 
+    // document.body.style.transition = `opacity ${DURATION}ms ease-out`;
+    // document.body.style.opacity = '1';
     
     // Initial attachment
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            document.body.style.transition = `opacity ${DURATION}ms ease-out`;
+            // document.body.style.transition = `opacity ${DURATION}ms ease-out`;
             attachLinkHandlers();
         });
     } else {

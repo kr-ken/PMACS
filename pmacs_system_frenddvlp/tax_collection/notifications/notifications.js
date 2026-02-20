@@ -106,7 +106,7 @@ loadNotifications();
 async function addSampleNotification() {
     const sample = {
         title: "Welcome to PMACS",
-        message: "Tax collection system is now active",
+        message: "With PMACS, everything is just clicks away! Experience a faster, more accurate, and convenient way to track the tax progress—all in one place.",
         type: "info",
         createdAt: new Date()
     };
@@ -118,5 +118,5 @@ async function addSampleNotification() {
     }
 }
 
-// Uncomment to add sample notification on first load
-// addSampleNotification();
+
+addSampleNotification();

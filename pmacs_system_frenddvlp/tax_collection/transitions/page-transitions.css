@@ -5,6 +5,5 @@ html, body {
 }
 
 body {
-    opacity: 1;
-    transition: opacity 200ms ease-out;
+    transition: 200ms ease-out;
 }

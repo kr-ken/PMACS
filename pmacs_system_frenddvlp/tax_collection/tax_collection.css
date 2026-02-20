@@ -19,12 +19,39 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f6fa;
+    background: linear-gradient(135deg, #217dda 0%, #05478a 100%); /* Match top-nav gradient */
     color: var(--dark-text);
     line-height: 1.6;
+    /* Critical for transitions - match the page background */
+    background-attachment: fixed; /* Prevents white flash during fade */
 }
 
-/* Top Navigation */
+/* Main Content - Add a background that matches the body during fade */
+.main-content {
+    padding: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: #f5f6fa; /* Your original background */
+    border-radius: 20px 20px 0 0;
+    min-height: calc(100vh - 150px); /* Ensure content fills height */
+    /* Prevent white background from showing during transition */
+    position: relative;
+    z-index: 1;
+}
+
+/* Add a wrapper for better transition handling */
+.main-content::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: -1;
+}
+
+/* Top Navigation - Make sure gradient matches body during fade */
 .top-nav {
     background: linear-gradient(135deg, #217dda 0%, #05478a 100%);
     color: white;
@@ -33,6 +60,9 @@ body {
     position: sticky;
     top: 0;
     z-index: 1000;
+    /* Ensure no white flashes */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .nav-top-row {
@@ -125,13 +155,6 @@ body {
     margin-left: 8px;
 }
 
-/* Main Content */
-.main-content {
-    padding: 30px;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
 /* Page Header */
 .page-header {
     display: flex;
@@ -176,11 +199,12 @@ body {
 .search-box {
     display: flex;
     align-items: center;
-    background: white;
-    border: 2px solid var(--secondary-color);
+    background: rgb(235, 235, 235);
+    border: 2px solid;
+    border-color: rgb(187, 187, 187);
     border-radius: 50px;
     padding: 10px 20px;
-    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+    box-shadow: 0 2px 8px rgba(84, 86, 87, 0.2);
     transition: all 0.3s ease;
     min-width: 280px;
 }
@@ -209,12 +233,15 @@ body {
     color: #95a5a6;
 }
 
-/* Table Container */
+/* Table Container - Ensure background matches during fade */
 .table-container {
     background: white;
     border-radius: 10px;
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
     overflow: hidden;
+    /* Prevent white flash */
+    position: relative;
+    z-index: 2;
 }
 
 table {
@@ -294,6 +321,19 @@ td.center-col {
 
 .empty-state p {
     margin: 5px 0;
+}
+
+/* Transition-specific fixes */
+body.page-fade .main-content,
+body.page-fade .top-nav,
+body.page-fade .table-container {
+    /* Ensure no white shows through during fade */
+    background-color: transparent;
+}
+
+/* Prevent any white backgrounds during fade */
+body.page-fade {
+    background: linear-gradient(135deg, #217dda 0%, #05478a 100%);
 }
 
 /* Responsive */

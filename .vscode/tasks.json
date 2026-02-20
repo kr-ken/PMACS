@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "start",
+			"path": "pmacs_system_bkenddvlp",
+			"problemMatcher": [
+				"$node-sass"
+			],
+			"label": "npm: start - pmacs_system_bkenddvlp",
+			"detail": "node server.js"
+		}
+	]
+}
