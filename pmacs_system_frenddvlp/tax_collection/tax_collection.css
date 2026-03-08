@@ -1,5 +1,3 @@
-/* PMACS Tax Collection - Main Styles */
-
 :root {
     --primary-color: #2971b9;
     --secondary-color: #3498db;
@@ -8,383 +6,1746 @@
     --warning-color: #f39c12;
     --light-bg: #ecf0f1;
     --dark-text: #224263;
-    --border-color: #bdc3c7;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #217dda 0%, #05478a 100%); /* Match top-nav gradient */
-    color: var(--dark-text);
-    line-height: 1.6;
-    /* Critical for transitions - match the page background */
-    background-attachment: fixed; /* Prevents white flash during fade */
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #217dda 0%, #05478a 100%);
+    background-attachment: fixed;
+    margin: 0;
 }
 
-/* Main Content - Add a background that matches the body during fade */
+
+/* STRETCHED MENU */
+.main-menu {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    width: 100%;
+}
+
+
+.menu-item {
+    flex: 1;
+    /* Stretches buttons across the bar */
+    color: white;
+    text-decoration: none;
+    padding: 18px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    transition: 0.3s;
+    border-bottom: 4px solid transparent;
+}
+
+
+.menu-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom-color: var(--warning-color);
+}
+
+
+/* PAGE LAYOUT */
 .main-content {
     padding: 30px;
     max-width: 1400px;
     margin: 0 auto;
-    background: #f5f6fa; /* Your original background */
+    background: #f5f6fa;
     border-radius: 20px 20px 0 0;
-    min-height: calc(100vh - 150px); /* Ensure content fills height */
-    /* Prevent white background from showing during transition */
-    position: relative;
-    z-index: 1;
+    min-height: 100vh;
 }
 
-/* Add a wrapper for better transition handling */
-.main-content::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: white;
-    z-index: -1;
-}
 
-/* Top Navigation - Make sure gradient matches body during fade */
-.top-nav {
-    background: linear-gradient(135deg, #217dda 0%, #05478a 100%);
-    color: white;
-    padding: 0;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    /* Ensure no white flashes */
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-}
-
-.nav-top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 30px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-area {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.logo-icon {
-    font-size: 28px;
-    background: rgba(255, 255, 255, 0.2);
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-}
-
-.logo-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 10px;
-}
-
-.logo-area h2 {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-
-.top-links {
-    display: flex;
-    gap: 20px;
-}
-
-.top-links a {
-    color: white;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 15px;
-    border-radius: 5px;
-    transition: background 0.3s;
-}
-
-.top-links a:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-/* Main Menu */
-.main-menu {
-    display: flex;
-    gap: 5px;
-    padding: 0 30px;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.menu-item {
-    color: white;
-    text-decoration: none;
-    padding: 15px 25px;
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: all 0.3s;
-    border-bottom: 3px solid transparent;
-}
-
-.menu-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.menu-item.active {
-    border-bottom-color: var(--warning-color);
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.menu-item i {
-    margin-left: 8px;
-}
-
-/* Page Header */
+/* HEADER BUTTONS & SEARCH */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
-    flex-wrap: wrap;
-    gap: 20px;
 }
 
-.header-left {
-    flex: 1;
-    min-width: 200px;
-}
 
 .header-right {
     display: flex;
-    align-items: center;
+    gap: 15px;
+    /* Keeps buttons sorted */
 }
 
-.title-area h1 {
-    font-size: 32px;
-    color: var(--primary-color);
-    margin-bottom: 5px;
-}
 
-.title-area p {
-    font-size: 14px;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.date-display {
-    font-size: 16px;
-    color: var(--secondary-color);
-    margin-top: 10px;
-    font-weight: 600;
-}
-
-/* Search Box - Oval with icon on left */
 .search-box {
     display: flex;
     align-items: center;
-    background: rgb(235, 235, 235);
-    border: 2px solid;
-    border-color: rgb(187, 187, 187);
+    background: white;
+    border: 2px solid #ddd;
     border-radius: 50px;
-    padding: 10px 20px;
-    box-shadow: 0 2px 8px rgba(84, 86, 87, 0.2);
-    transition: all 0.3s ease;
-    min-width: 280px;
+    padding: 8px 20px;
+    min-width: 300px;
 }
+
+
+.tax-list-trigger {
+    background: var(--success-color);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+/* BLUE AREA SEPARATORS */
+.area-separator {
+    background-color: var(--primary-color) !important;
+}
+
+
+.area-separator td {
+    color: white !important;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 12px 20px;
+}
+
+
+/* BLUR & MODAL */
+body.modal-active .main-content,
+body.modal-active .top-nav {
+    filter: blur(10px);
+    pointer-events: none;
+}
+
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.tax-modal-content {
+    background: white;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 15px;
+    overflow: hidden;
+    animation: fadeIn 0.3s;
+}
+
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+:root {
+
+
+    --primary-color: #2971b9;
+
+
+    --secondary-color: #3498db;
+
+
+    --accent-color: #e74c3c;
+
+
+    --success-color: #27ae60;
+
+
+    --warning-color: #f39c12;
+
+
+    --light-bg: #ecf0f1;
+
+
+    --dark-text: #224263;
+
+
+    --border-color: #bdc3c7;
+
+
+}
+
+
+
+
+
+
+* {
+
+
+    box-sizing: border-box;
+
+
+    margin: 0;
+
+
+    padding: 0;
+
+
+}
+
+
+
+
+
+
+body {
+
+
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+
+    background: linear-gradient(135deg, #217dda 0%, #05478a 100%);
+    /* Match top-nav gradient */
+
+
+    color: var(--dark-text);
+
+
+    line-height: 1.6;
+
+
+    /* Critical for transitions - match the page background */
+
+
+    background-attachment: fixed;
+    /* Prevents white flash during fade */
+
+
+}
+
+
+
+
+
+
+/* Main Content - Add a background that matches the body during fade */
+
+
+.main-content {
+
+
+    padding: 30px;
+
+
+    max-width: 1400px;
+
+
+    margin: 0 auto;
+
+
+    background: #f5f6fa;
+    /* Your original background */
+
+
+    border-radius: 20px 20px 0 0;
+
+
+    min-height: calc(100vh - 150px);
+    /* Ensure content fills height */
+
+
+    /* Prevent white background from showing during transition */
+
+
+    position: relative;
+
+
+    z-index: 1;
+
+
+}
+
+
+
+
+
+
+/* Add a wrapper for better transition handling */
+
+
+.main-content::before {
+
+
+    content: '';
+
+
+    position: fixed;
+
+
+    top: 0;
+
+
+    left: 0;
+
+
+    right: 0;
+
+
+    bottom: 0;
+
+
+    background: white;
+
+
+    z-index: -1;
+
+
+}
+
+
+
+
+
+
+/* Top Navigation - Make sure gradient matches body during fade */
+
+
+.top-nav {
+
+
+    background: linear-gradient(135deg, #217dda 0%, #05478a 100%);
+
+
+    color: white;
+
+
+    padding: 0;
+
+
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+
+    position: sticky;
+
+
+    top: 0;
+
+
+    z-index: 1000;
+
+
+    /* Ensure no white flashes */
+
+
+    -webkit-backface-visibility: hidden;
+
+
+    backface-visibility: hidden;
+
+
+}
+
+
+
+
+
+
+.nav-top-row {
+
+
+    display: flex;
+
+
+    justify-content: space-between;
+
+
+    align-items: center;
+
+
+    padding: 15px 30px;
+
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+
+}
+
+
+
+
+
+
+.logo-area {
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 12px;
+
+
+}
+
+
+
+
+
+
+.logo-icon {
+
+
+    font-size: 28px;
+
+
+    background: rgba(255, 255, 255, 0.2);
+
+
+    width: 45px;
+
+
+    height: 45px;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    justify-content: center;
+
+
+    border-radius: 10px;
+
+
+}
+
+
+
+
+
+
+.logo-icon img {
+
+
+    width: 100%;
+
+
+    height: 100%;
+
+
+    object-fit: contain;
+
+
+    border-radius: 10px;
+
+
+}
+
+
+
+
+
+
+.logo-area h2 {
+
+
+    font-size: 24px;
+
+
+    font-weight: 700;
+
+
+    letter-spacing: 1px;
+
+
+}
+
+
+
+
+
+
+.top-links {
+
+
+    display: flex;
+
+
+    gap: 20px;
+
+
+}
+
+
+
+
+
+
+.top-links a {
+
+
+    color: white;
+
+
+    text-decoration: none;
+
+
+    font-size: 13px;
+
+
+    font-weight: 600;
+
+
+    padding: 8px 15px;
+
+
+    border-radius: 5px;
+
+
+    transition: background 0.3s;
+
+
+}
+
+
+
+
+
+
+.top-links a:hover {
+
+
+    background: rgba(255, 255, 255, 0.15);
+
+
+}
+
+
+
+
+
+
+/* Main Menu */
+
+
+/* STRETCH MENU ITEMS */
+.main-menu {
+    display: flex;
+    width: 100%;
+    /* Ensure full width */
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0;
+    /* Remove side padding */
+}
+
+
+.menu-item {
+    flex: 1;
+    /* THIS STRETCHES THE BUTTONS */
+    text-align: center;
+    color: white;
+    padding: 15px;
+    text-decoration: none;
+    border-bottom: 4px solid transparent;
+}
+
+
+/* IMPROVED BLUR LOGIC */
+body.modal-active .main-content,
+body.modal-active .top-nav {
+    filter: blur(12px);
+    /* Stronger blur for better focus */
+    pointer-events: none;
+    transition: filter 0.3s ease;
+}
+
+
+/* THE SEPARATOR FIX */
+.area-separator {
+    background-color: #2971b9 !important;
+}
+
+
+.area-separator td {
+    color: white !important;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+
+.menu-item:hover {
+
+
+    background: rgba(255, 255, 255, 0.1);
+
+
+}
+
+
+
+
+
+
+.menu-item.active {
+
+
+    border-bottom-color: var(--warning-color);
+
+
+    background: rgba(255, 255, 255, 0.1);
+
+
+}
+
+
+
+
+
+
+.menu-item i {
+
+
+    margin-left: 8px;
+
+
+}
+
+
+
+
+
+
+/* Page Header */
+
+
+.page-header {
+
+
+    display: flex;
+
+
+    justify-content: space-between;
+
+
+    align-items: center;
+
+
+    margin-bottom: 30px;
+
+
+    flex-wrap: wrap;
+
+
+    gap: 20px;
+
+
+}
+
+
+
+
+
+
+.header-left {
+
+
+    flex: 1;
+
+
+    min-width: 200px;
+
+
+}
+
+
+
+
+
+
+.header-right {
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+}
+
+
+
+
+
+
+.title-area h1 {
+
+
+    font-size: 32px;
+
+
+    color: var(--primary-color);
+
+
+    margin-bottom: 5px;
+
+
+}
+
+
+
+
+
+
+.title-area p {
+
+
+    font-size: 14px;
+
+
+    color: #7f8c8d;
+
+
+    text-transform: uppercase;
+
+
+    letter-spacing: 1px;
+
+
+}
+
+
+
+
+
+
+.date-display {
+
+
+    font-size: 16px;
+
+
+    color: var(--secondary-color);
+
+
+    margin-top: 10px;
+
+
+    font-weight: 600;
+
+
+}
+
+
+
+
+
+
+/* Search Box - Oval with icon on left */
+
+
+.search-box {
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    background: rgb(235, 235, 235);
+
+
+    border: 2px solid;
+
+
+    border-color: rgb(187, 187, 187);
+
+
+    border-radius: 50px;
+
+
+    padding: 10px 20px;
+
+
+    box-shadow: 0 2px 8px rgba(84, 86, 87, 0.2);
+
+
+    transition: all 0.3s ease;
+
+
+    min-width: 280px;
+
+
+}
+
+
+
+
+
 
 .search-box:focus-within {
+
+
     border-color: var(--primary-color);
+
+
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+
+
 }
+
+
+
+
+
 
 .search-icon {
+
+
     color: var(--secondary-color);
+
+
     margin-right: 12px;
+
+
     font-size: 16px;
+
+
 }
+
+
+
+
+
 
 .search-input {
+
+
     border: none;
+
+
     outline: none;
+
+
     font-size: 14px;
+
+
     color: var(--dark-text);
+
+
     width: 100%;
+
+
     background: transparent;
+
+
 }
+
+
+
+
+
 
 .search-input::placeholder {
+
+
     color: #95a5a6;
+
+
 }
+
+
+
+
+
 
 /* Table Container - Ensure background matches during fade */
+
+
 .table-container {
+
+
     background: white;
+
+
     border-radius: 10px;
+
+
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+
+
     overflow: hidden;
+
+
     /* Prevent white flash */
+
+
     position: relative;
+
+
     z-index: 2;
+
+
 }
+
+
+
+
+
 
 table {
+
+
     width: 100%;
+
+
     border-collapse: collapse;
+
+
 }
+
+
+
+
+
 
 thead {
+
+
     background: var(--primary-color);
+
+
     color: white;
+
+
 }
+
+
+
+
+
 
 th {
+
+
     padding: 18px 20px;
+
+
     text-align: left;
+
+
     font-size: 13px;
+
+
     font-weight: 600;
+
+
     text-transform: uppercase;
+
+
     letter-spacing: 0.5px;
+
+
 }
+
+
+
+
+
 
 th.center-col {
+
+
     text-align: center;
+
+
 }
+
+
+
+
+
 
 tbody tr {
+
+
     border-bottom: 1px solid var(--light-bg);
+
+
     transition: background 0.2s;
+
+
 }
+
+
+
+
+
 
 tbody tr:hover {
+
+
     background: #f8f9fa;
+
+
 }
+
+
+
+
+
 
 td {
+
+
     padding: 15px 20px;
+
+
     font-size: 14px;
+
+
 }
+
+
+
+
+
 
 td.center-col {
+
+
     text-align: center;
+
+
 }
+
+
+
+
+
 
 /* Checkbox Styles */
+
+
 .custom-checkbox {
+
+
     width: 22px;
+
+
     height: 22px;
+
+
     cursor: pointer;
+
+
     accent-color: var(--success-color);
+
+
 }
+
+
+
+
+
 
 .attendance-cell,
+
+
 .tax-cell {
+
+
     display: flex;
+
+
     align-items: center;
+
+
     justify-content: center;
+
+
     gap: 10px;
+
+
 }
+
+
+
+
+
 
 .tax-pill {
+
+
     background: var(--light-bg);
+
+
     padding: 6px 15px;
+
+
     border-radius: 20px;
+
+
     font-size: 13px;
+
+
     font-weight: 700;
+
+
     color: var(--primary-color);
+
+
     min-width: 70px;
+
+
     text-align: center;
+
+
 }
+
+
+
+
+
 
 /* Empty State */
+
+
 .empty-state {
+
+
     text-align: center;
+
+
     padding: 50px 20px !important;
+
+
     color: #7f8c8d;
+
+
 }
+
+
+
+
+
 
 .empty-state p {
+
+
     margin: 5px 0;
+
+
 }
+
+
+
+
+
 
 /* Transition-specific fixes */
+
+
 body.page-fade .main-content,
+
+
 body.page-fade .top-nav,
+
+
 body.page-fade .table-container {
+
+
     /* Ensure no white shows through during fade */
+
+
     background-color: transparent;
+
+
 }
+
+
+
+
+
 
 /* Prevent any white backgrounds during fade */
+
+
 body.page-fade {
+
+
     background: linear-gradient(135deg, #217dda 0%, #05478a 100%);
+
+
 }
+
+
+/* Table Area Separator Row */
+
+
+.area-separator {
+
+
+    background-color: var(--secondary-color);
+    /* Uses your #3498db */
+
+
+}
+
+
+
+
+
+
+.area-separator td {
+
+
+    color: white;
+
+
+    font-weight: 700;
+
+
+    text-transform: uppercase;
+
+
+    letter-spacing: 1px;
+
+
+    padding: 10px 20px;
+
+
+    font-size: 13px;
+
+
+    border: none;
+
+
+}
+
+
+
+
+
+
+.area-separator i {
+
+
+    margin-right: 8px;
+
+
+    opacity: 0.8;
+
+
+}
+
+
+
+
+
+
+/* Ensure hover effect doesn't ruin the separator background */
+
+
+tbody tr.area-separator:hover {
+
+
+    background-color: var(--secondary-color);
+
+
+}
+
+
+
+
+
+
+/* Blur Logic */
+
+
+body.modal-active .main-content,
+
+
+body.modal-active .top-nav {
+
+
+    filter: blur(8px);
+
+
+    pointer-events: none;
+    /* Prevents clicking stuff behind the modal */
+
+
+}
+
+
+
+
+
+
+/* Tax List Button */
+
+
+.tax-list-trigger {
+
+
+    background-color: #3bb54a;
+    /* Green to distinguish from search */
+
+
+    color: white;
+
+
+    border: none;
+
+
+    padding: 10px 20px;
+
+
+    border-radius: 50px;
+
+
+    font-weight: bold;
+
+
+    cursor: pointer;
+
+
+    margin-right: 15px;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 8px;
+
+
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+
+}
+
+
+
+
+
+
+/* Modal Overlay */
+
+
+.modal-overlay {
+
+
+    display: none;
+    /* Hidden by default */
+
+
+    position: fixed;
+
+
+    top: 0;
+
+
+    left: 0;
+
+
+    width: 100%;
+
+
+    height: 100%;
+
+
+    background: rgba(0, 0, 0, 0.4);
+
+
+    z-index: 9999;
+
+
+    justify-content: center;
+
+
+    align-items: center;
+
+
+}
+
+
+
+
+
+
+.tax-modal-content {
+
+
+    background: white;
+
+
+    width: 90%;
+
+
+    max-width: 800px;
+
+
+    max-height: 85vh;
+
+
+    border-radius: 20px;
+
+
+    overflow: hidden;
+
+
+    display: flex;
+
+
+    flex-direction: column;
+
+
+    animation: slideUp 0.3s ease-out;
+
+
+}
+
+
+
+
+
+
+@keyframes slideUp {
+
+
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+
+}
+
+
+
+
+
+
+.modal-header {
+
+
+    background: var(--primary-color);
+
+
+    color: white;
+
+
+    padding: 20px;
+
+
+    display: flex;
+
+
+    justify-content: space-between;
+
+
+    align-items: center;
+
+
+}
+
+
+
+
+
+
+.close-btn {
+
+
+    background: none;
+
+
+    border: none;
+
+
+    color: white;
+
+
+    font-size: 30px;
+
+
+    cursor: pointer;
+
+
+}
+
+
+
+
+
+
+.modal-body {
+
+
+    padding: 0;
+
+
+    overflow-y: auto;
+
+
+}
+
+
+
+
+
+
+/* Modal Table Styling */
+
+
+.modal-table {
+
+
+    width: 100%;
+
+
+    border-collapse: collapse;
+
+
+}
+
+
+
+
+
+
+.modal-table .area-separator {
+
+
+    background-color: #f1f4f8;
+
+
+    color: #2971b9;
+
+
+    font-weight: bold;
+
+
+    text-transform: uppercase;
+
+
+    font-size: 12px;
+
+
+}
+
+
+
+
+
+
+.modal-table .area-separator td {
+
+
+    padding: 10px 20px;
+
+
+    border-bottom: 2px solid #2971b9;
+
+
+}
+
+
+
+
+
+
+.quantified-badge {
+
+
+    color: #3bb54a;
+
+
+    font-size: 18px;
+
+
+}
+
 
 /* Responsive */
+
+
 @media (max-width: 768px) {
+
+
     .page-header {
+
+
         flex-direction: column;
+
+
         align-items: flex-start;
+
+
     }
-    
+
+
+
+
     .main-menu {
+
+
         flex-wrap: wrap;
+
+
     }
-    
+
+
+
+
     .menu-item {
+
+
         padding: 12px 15px;
+
+
         font-size: 12px;
+
+
     }
-    
-    th, td {
+
+
+
+
+    th,
+    td {
+
+
         padding: 12px 10px;
+
+
         font-size: 12px;
+
+
     }
-    
+
+
+
+
     .tax-pill {
+
+
         padding: 4px 10px;
+
+
         font-size: 11px;
+
+
         min-width: 50px;
+
+
     }
-    
+
+
+
+
     .search-box {
-        min-width: 100%;
-        width: 100%;
+
+
+        min-width: 50%;
+
+
     }
+
+
 }
 
+
+
+
+
+
 @media (max-width: 480px) {
+
+
     .page-header {
+
+
         flex-direction: column;
+
+
     }
-    
+
+
+
+
     .search-box {
-        min-width: 100%;
+
+
+        min-width: 40%;
+
+
         padding: 6px 15px;
+
+
     }
-    
+
+
+
+
     .search-icon {
+
+
         margin-right: 8px;
+
+
         font-size: 14px;
+
+
     }
-    
+
+
+
+
     .search-input {
+
+
         font-size: 13px;
+        padding: 4px 4px 4px 4px;
+
+
     }
+
+
 }

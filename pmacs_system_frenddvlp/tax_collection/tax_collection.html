@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PMACS - Vendor Tax Collection</title>
     <link rel="stylesheet" href="tax_collection.css">
-    <link rel="stylesheet" href="transitions/page-transitions.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+
 
     <header class="top-nav">
         <div class="nav-top-row">
@@ -21,13 +21,14 @@
                 <a href="#">LOGOUT</a>
             </div>
         </div>
-        
+       
         <nav class="main-menu">
             <a href="tax_collection.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
-            <a href="dashboard/dashboard.html" class="menu-item" data-no-transition>DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
+            <a href="dashboard/dashboard.html" class="menu-item">DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
             <a href="notifications/notifications.html" class="menu-item">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
         </nav>
     </header>
+
 
     <main class="main-content">
         <div class="page-header">
@@ -35,16 +36,20 @@
                 <div class="title-area">
                     <h1>VENDOR TAX COLLECTION</h1>
                     <p>RECORDS TAX AND ATTENDANCE OF VENDORS</p>
-                    <h2 class="date-display" id="currentDate">XXXXXX XX XXXX (DATE)</h2>
+                    <h2 class="date-display" id="currentDate">LOADING DATE...</h2>
                 </div>
             </div>
             <div class="header-right">
+                <button id="openTaxList" class="tax-list-trigger">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> TAX LIST
+                </button>
                 <div class="search-box">
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" class="search-input" placeholder="Search vendors...">
+                    <input type="text" id="vendorSearch" class="search-input" placeholder="Search vendors...">
                 </div>
             </div>
         </div>
+
 
         <div class="table-container">
             <table id="taxTable">
@@ -62,7 +67,30 @@
         </div>
     </main>
 
-    <script src="transitions/page-transitions.js" defer></script>
+
+    <div id="taxModalOverlay" class="modal-overlay">
+        <div class="tax-modal-content">
+            <div class="modal-header">
+                <h2>OFFICIAL COLLECTION FEES</h2>
+                <button id="closeTaxList" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="modal-table">
+                    <thead>
+                        <tr>
+                            <th>PRODUCT / SERVICE</th>
+                            <th>AMOUNT RANGE</th>
+                            <th class="center-col">QUANTIFIED?</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tax-fee-list">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module" src="tax_collection.js"></script>
 </body>
 </html>
