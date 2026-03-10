@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +9,15 @@
     <link rel="stylesheet" href="../admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
+
 <body>
+
 
 <header class="top-nav">
     <div class="nav-top-row">
         <div class="logo-area">
-            <div class="logo-icon"><img src="../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
+            <div class="logo-icon"><img src="../pmacs_logo_bw.png" alt="PMACS Logo"></div>
             <h2>PMACS</h2>
         </div>
         <div class="top-links">
@@ -21,13 +26,17 @@
         </div>
     </div>
 
+
     <nav class="main-menu">
-        <a href="admin.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
-        <a href="dashboard/dashboard.html" class="menu-item" data-no-transition>DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
-        <a href="notifications/notifications.html" class="menu-item">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
-        <a href="tax_list/tax_list.html" class="menu-item">TAX LIST <i class="fa-solid fa-receipt"></i></a>
+        <a href="../vendor_list/vendor.html" class="menu-item">VENDOR <i class="fa-solid fa-address-card"></i></a>
+        <a href="../admin.html" class="menu-item" data-no-transition>DASHBOARD <i
+                class="fa-solid fa-chalkboard"></i></a>
+        <a href="../notification/notification.html" class="menu-item">NOTIFICATIONS <i
+                class="fa-solid fa-bell"></i></a>
+        <a href="tax_list.html" class="menu-item active">TAX LIST <i class="fa-solid fa-receipt"></i></a>
     </nav>
 </header>
+
 
 <main class="main-content">
     <div class="page-header">
@@ -49,6 +58,7 @@
         </div>
     </div>
 
+
     <div class="table-container">
         <table id="taxTable">
             <thead>
@@ -65,6 +75,7 @@
     </div>
 </main>
 
+
 <!-- Add Vendor Modal -->
 <div id="vendorModal" class="modal-overlay hidden">
     <div class="modal-content" style="max-width: 900px;">
@@ -79,7 +90,8 @@
                     <div>
                         <div class="form-group">
                             <label for="vendor_name">Full Name</label>
-                            <input type="text" id="vendor_name" name="vendor_name" required placeholder="Last Name, First Name Middle Name">
+                            <input type="text" id="vendor_name" name="vendor_name" required
+                                   placeholder="Last Name, First Name Middle Name">
                         </div>
                         <div class="form-group">
                             <label for="vendor_gender">Gender</label>
@@ -96,30 +108,36 @@
                         </div>
                         <div class="form-group">
                             <label for="vendor_address">Address</label>
-                            <input type="text" id="vendor_address" name="vendor_address" required placeholder="Street, Barangay, City">
+                            <input type="text" id="vendor_address" name="vendor_address" required
+                                   placeholder="Street, Barangay, City">
                         </div>
                         <div class="form-group">
                             <label for="vendor_number">Contact Number</label>
-                            <input type="text" id="vendor_number" name="vendor_number" required placeholder="09xxxxxxxxx">
+                            <input type="text" id="vendor_number" name="vendor_number" required
+                                   placeholder="09xxxxxxxxx">
                         </div>
                         <div class="form-group">
                             <label for="vendor_email">Email Address</label>
-                            <input type="email" id="vendor_email" name="vendor_email" required placeholder="example@email.com">
+                            <input type="email" id="vendor_email" name="vendor_email" required
+                                   placeholder="example@email.com">
                         </div>
                         <div class="form-group">
                             <label for="vendor_stand_in">Stand-in Name (Optional)</label>
-                            <input type="text" id="vendor_stand_in" name="vendor_stand_in" placeholder="Representative Name">
+                            <input type="text" id="vendor_stand_in" name="vendor_stand_in"
+                                   placeholder="Representative Name">
                         </div>
                     </div>
                     <!-- Column 2 -->
                     <div>
                         <div class="form-group">
                             <label for="vendor_stall_name">Stall Name</label>
-                            <input type="text" id="vendor_stall_name" name="vendor_stall_name" required placeholder="e.g. Mario's Meat Section">
+                            <input type="text" id="vendor_stall_name" name="vendor_stall_name" required
+                                   placeholder="e.g. Mario's Meat Section">
                         </div>
                         <div class="form-group">
                             <label for="vendor_stall_number">Stall Number</label>
-                            <input type="number" id="vendor_stall_number" name="vendor_stall_number" required placeholder="e.g. 101">
+                            <input type="number" id="vendor_stall_number" name="vendor_stall_number" required
+                                   placeholder="e.g. 101">
                         </div>
                         <div class="form-group">
                             <label for="vendor_stall_area">Stall Area</label>
@@ -139,28 +157,36 @@
                             <label>Status & Validity</label>
                             <div class="checkbox-group" style="display: flex; gap: 20px;">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" id="vendor_status" name="vendor_status" checked> Active Status
+                                    <input type="checkbox" id="vendor_status" name="vendor_status" checked> Active
+                                    Status
                                 </label>
                                 <label class="checkbox-label">
-                                    <input type="checkbox" id="vendor_validity" name="vendor_validity" checked> Valid Permit
+                                    <input type="checkbox" id="vendor_validity" name="vendor_validity" checked>
+                                    Valid Permit
                                 </label>
                             </div>
                         </div>
 
+
                         <!-- Automatic Credentials Preview -->
-                        <div style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px; border: 1px solid #cce3ff;">
-                            <h4 style="margin-bottom: 10px; color: var(--primary-blue);">Generated Login Credentials</h4>
+                        <div
+                                style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px; border: 1px solid #cce3ff;">
+                            <h4 style="margin-bottom: 10px; color: var(--primary-blue);">Generated Login Credentials
+                            </h4>
                             <div class="form-group">
                                 <label style="font-size: 0.85em; color: #555;">Username</label>
-                                <input type="text" id="generated_username" readonly style="background: #e9ecef; cursor: not-allowed;">
+                                <input type="text" id="generated_username" readonly
+                                       style="background: #e9ecef; cursor: not-allowed;">
                             </div>
                             <div class="form-group">
                                 <label style="font-size: 0.85em; color: #555;">Initial Password</label>
-                                <input type="text" id="generated_password" readonly style="background: #e9ecef; cursor: not-allowed;">
+                                <input type="text" id="generated_password" readonly
+                                       style="background: #e9ecef; cursor: not-allowed;">
                             </div>
                         </div>
                     </div>
                 </div>
+
 
                 <div class="form-actions" style="margin-top: 20px;">
                     <button type="submit" class="btn btn-primary">Register Vendor</button>
@@ -171,10 +197,14 @@
     </div>
 </div>
 
+
 <!-- Notifications Container -->
 <div id="notificationsContainer" class="notifications-container"></div>
+
 
 <script src="transitions/page-transitions.js" defer></script>
 <script type="module" src="vendor.js"></script>
 </body>
+
+
 </html>
