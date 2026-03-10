@@ -1,135 +1,180 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>PMACS - Vendor Tax Collection</title>
-
-    <link rel="stylesheet" href="tax_collection.css">
-
-    <link rel="stylesheet" href="transitions/page-transitions.css">
-
+    <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 </head>
-
 <body>
 
-
-
     <header class="top-nav">
-
         <div class="nav-top-row">
-
             <div class="logo-area">
-
                 <div class="logo-icon"><img src="../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
-
                 <h2>PMACS</h2>
-
             </div>
-
             <div class="top-links">
-
                 <a href="#">SETTINGS</a>
-
                 <a href="#">LOGOUT</a>
-
             </div>
-
         </div>
-
-       
 
         <nav class="main-menu">
-
-            <a href="tax_collection.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
-
+            <a href="admin.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
             <a href="dashboard/dashboard.html" class="menu-item" data-no-transition>DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
-
             <a href="notifications/notifications.html" class="menu-item">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
-
+            <a href="tax_list/tax_list.html" class="menu-item">TAX LIST <i class="fa-solid fa-receipt"></i></a>
         </nav>
-
     </header>
 
-
-
     <main class="main-content">
-
         <div class="page-header">
-
             <div class="header-left">
-
                 <div class="title-area">
-
                     <h1>VENDOR TAX COLLECTION</h1>
-
                     <p>RECORDS TAX AND ATTENDANCE OF VENDORS</p>
-
                     <h2 class="date-display" id="currentDate">XXXXXX XX XXXX (DATE)</h2>
-
                 </div>
-
             </div>
-
             <div class="header-right">
-
+                <button class="btn btn-primary" id="btnAddVendor" style="margin-right: 15px;">
+                    <i class="fa-solid fa-user-plus"></i> ADD VENDOR
+                </button>
                 <div class="search-box">
-
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
-
                     <input type="text" class="search-input" placeholder="Search vendors...">
-
                 </div>
-
             </div>
-
         </div>
-
-
 
         <div class="table-container">
-
             <table id="taxTable">
-
                 <thead>
-
                     <tr>
-
                         <th>VENDOR NAME</th>
-
                         <th>STALL TYPE</th>
-
                         <th class="center-col">ATTENDANCE</th>
-
                         <th class="center-col">TAX</th>
-
                     </tr>
-
                 </thead>
-
                 <tbody id="vendor-list">
-
                     </tbody>
-
             </table>
-
         </div>
-
     </main>
 
+    <!-- Add Vendor Modal -->
+    <div id="vendorModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Add New Vendor</h2>
+                <button class="close-btn" id="closeVendorModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="vendorForm" class="tax-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- Column 1 -->
+                        <div>
+                            <div class="form-group">
+                                <label for="vendor_name">Full Name</label>
+                                <input type="text" id="vendor_name" name="vendor_name" required placeholder="Last Name, First Name Middle Name">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_gender">Gender</label>
+                                <select id="vendor_gender" name="vendor_gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_birthdate">Birthdate</label>
+                                <input type="date" id="vendor_birthdate" name="vendor_birthdate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_address">Address</label>
+                                <input type="text" id="vendor_address" name="vendor_address" required placeholder="Street, Barangay, City">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_number">Contact Number</label>
+                                <input type="text" id="vendor_number" name="vendor_number" required placeholder="09xxxxxxxxx">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_email">Email Address</label>
+                                <input type="email" id="vendor_email" name="vendor_email" required placeholder="example@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_stand_in">Stand-in Name (Optional)</label>
+                                <input type="text" id="vendor_stand_in" name="vendor_stand_in" placeholder="Representative Name">
+                            </div>
+                        </div>
+                        <!-- Column 2 -->
+                        <div>
+                            <div class="form-group">
+                                <label for="vendor_stall_name">Stall Name</label>
+                                <input type="text" id="vendor_stall_name" name="vendor_stall_name" required placeholder="e.g. Mario's Meat Section">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_stall_number">Stall Number</label>
+                                <input type="number" id="vendor_stall_number" name="vendor_stall_number" required placeholder="e.g. 101">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_stall_area">Stall Area</label>
+                                <select id="vendor_stall_area" name="vendor_stall_area" required>
+                                    <option value="">Select Area</option>
+                                    <!-- Options will be loaded from collection_fees -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="product_services">Product/Services</label>
+                                <select id="product_services" name="product_services" required>
+                                    <option value="">Select Service</option>
+                                    <!-- Options will be loaded from collection_fees based on area -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Status & Validity</label>
+                                <div class="checkbox-group" style="display: flex; gap: 20px;">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="vendor_status" name="vendor_status" checked> Active Status
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="vendor_validity" name="vendor_validity" checked> Valid Permit
+                                    </label>
+                                </div>
+                            </div>
 
+                            <!-- Automatic Credentials Preview -->
+                            <div style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px; border: 1px solid #cce3ff;">
+                                <h4 style="margin-bottom: 10px; color: var(--primary-blue);">Generated Login Credentials</h4>
+                                <div class="form-group">
+                                    <label style="font-size: 0.85em; color: #555;">Username</label>
+                                    <input type="text" id="generated_username" readonly style="background: #e9ecef; cursor: not-allowed;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.85em; color: #555;">Initial Password</label>
+                                    <input type="text" id="generated_password" readonly style="background: #e9ecef; cursor: not-allowed;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary">Register Vendor</button>
+                        <button type="button" class="btn btn-secondary" id="cancelVendorModal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notificationsContainer" class="notifications-container"></div>
 
     <script src="transitions/page-transitions.js" defer></script>
-
     <script type="module" src="tax_collection.js"></script>
-
 </body>
-
 </html>

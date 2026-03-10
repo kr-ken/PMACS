@@ -4,7 +4,23 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5e603f5d-5621-4ecd-aabe-ab2efe4cb72d" name="Changes" comment="" />
+    <list default="true" id="5e603f5d-5621-4ecd-aabe-ab2efe4cb72d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/admin.css" beforeDir="false" afterPath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/admin.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/admin.html" beforeDir="false" afterPath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/admin.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" beforeDir="false" afterPath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" beforeDir="false" afterPath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" beforeDir="false" afterPath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" beforeDir="false" afterPath="$PROJECT_DIR$/PMACS/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.css" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -12,6 +28,9 @@
   </component>
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
@@ -30,12 +49,15 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/Administrator/Downloads/PMACS",
-    "run.code.analysis.last.selected.profile": "pProject Default"
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "templates.modelproviders.configurable"
   }
 }]]></component>
   <component name="RecentsManager">
