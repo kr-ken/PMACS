@@ -37,9 +37,18 @@ body {
     animation: slideInUp 0.5s ease-out;
 }
 
-@keyframes slideInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+.title-area h1 {
+    font-size: 32px;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.title-area p {
+    font-size: 14px;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
 }
 
 /* Top Navigation */
@@ -107,7 +116,6 @@ body {
 
 .menu-item:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--warning-color);
 }
 
 .menu-item.active {
