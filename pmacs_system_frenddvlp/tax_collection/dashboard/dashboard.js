@@ -30,6 +30,20 @@ const taxRates = {
     Default: 0,
 };
 
+const options = { year: "numeric", month: "long", day: "numeric" };
+const dateElement = document.getElementById("currentDate");
+
+if (dateElement) {
+    dateElement.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
+}
+
+
+function escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = String(text).toUpperCase();
+    return div.innerHTML;
+}
 // Update dashboard stats with pie charts
 async function updateDashboardStats() {
     const snapshot = await getDocs(vendorsCollection);

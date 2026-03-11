@@ -2,7 +2,6 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 
 // --- SUPABASE INITIALIZATION ---
-// Replace these with your actual Supabase Project URL and Anon Key
 const SUPABASE_URL = 'https://kbrwqixrbxlmopyxbrnj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -30,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- API OPERATIONS ---
 
 
-// Fetch taxes from Supabase
 async function fetchTaxes() {
     try {
         const { data, error } = await supabase
@@ -51,7 +49,6 @@ async function fetchTaxes() {
 }
 
 
-// Handle form submission (Create / Update)
 async function handleTaxSubmit(e) {
     e.preventDefault();
 
@@ -65,7 +62,6 @@ async function handleTaxSubmit(e) {
     let amountRange = '';
 
 
-    // Format amount_range string based on selection
     if (rangeType === 'fixed') {
         const amount = document.getElementById('amount').value;
         amountRange = amount.toString();
@@ -76,7 +72,6 @@ async function handleTaxSubmit(e) {
     }
 
 
-    // Payload matching your Supabase table schema
     const payload = {
         area: area,
         product_services: productServices,
@@ -87,7 +82,6 @@ async function handleTaxSubmit(e) {
 
     try {
         if (currentEditingId) {
-            // Update existing record
             const { error } = await supabase
                 .from('collection_fees')
                 .update(payload)
@@ -97,7 +91,6 @@ async function handleTaxSubmit(e) {
             if (error) throw error;
             showNotification("Tax updated successfully.");
         } else {
-            // Insert new record
             const { error } = await supabase
                 .from('collection_fees')
                 .insert([payload]);
@@ -109,7 +102,7 @@ async function handleTaxSubmit(e) {
 
 
         closeAddTaxModal();
-        fetchTaxes(); // Refresh list
+        fetchTaxes();
     } catch (error) {
         console.error("Error saving tax:", error);
         showNotification("Failed to save tax.", "error");
@@ -117,7 +110,6 @@ async function handleTaxSubmit(e) {
 }
 
 
-// Delete tax from Supabase
 window.confirmDelete = async function() {
     if (!taxToDeleteId) return;
 
@@ -134,7 +126,7 @@ window.confirmDelete = async function() {
 
         showNotification("Tax deleted successfully.");
         closeDeleteConfirm();
-        fetchTaxes(); // Refresh list
+        fetchTaxes();
     } catch (error) {
         console.error("Error deleting tax:", error);
         showNotification("Failed to delete tax.", "error");
@@ -147,10 +139,10 @@ window.confirmDelete = async function() {
 // --- DOM MANIPULATION & RENDERING ---
 
 
-// Render taxes to the DOM, grouped by area
 function renderTaxes() {
     const container = document.getElementById('taxListContainer');
-    container.innerHTML = ''; // Clear current list
+    if (!container) return;
+    container.innerHTML = '';
 
 
     if (collectionFees.length === 0) {
@@ -159,7 +151,27 @@ function renderTaxes() {
     }
 
 
-    // Group the data by "area"
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+
+
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>PRODUCT / SERVICE</th>
+                <th>AMOUNT RANGE</th>
+                <th>TYPE</th>
+                <th style="text-align: right;">ACTIONS</th>
+            </tr>
+        </thead>
+        <tbody id="taxTableBody"></tbody>
+    `;
+
+
+    const tbody = table.querySelector('#taxTableBody');
+
+
     const groupedFees = collectionFees.reduce((acc, fee) => {
         if (!acc[fee.area]) acc[fee.area] = [];
         acc[fee.area].push(fee);
@@ -167,52 +179,38 @@ function renderTaxes() {
     }, {});
 
 
-    // Create DOM elements for each group
     for (const [area, fees] of Object.entries(groupedFees)) {
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'tax-group'; // Add this to your CSS if needed
-        groupDiv.style.marginBottom = '20px';
+        const headerRow = document.createElement('tr');
+        headerRow.className = 'area-separator';
+        headerRow.innerHTML = `<td colspan="4"><i class="fa-solid fa-location-dot"></i> ${area.toUpperCase()}</td>`;
+        tbody.appendChild(headerRow);
 
 
-        // Group Header
-        groupDiv.innerHTML = `<h3 style="border-bottom: 2px solid #eee; padding-bottom: 8px;">${area}</h3>`;
-
-
-        const list = document.createElement('div');
-        list.className = 'tax-items-list';
-
-
-        // Items inside the group
         fees.forEach(fee => {
-            const item = document.createElement('div');
-            item.className = 'tax-item';
-            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0;';
-
-
-            item.innerHTML = `
-                <div class="tax-info">
-                    <strong>${fee.product_services}</strong>
-                    <div style="color: #666; font-size: 0.9em;">
-                        Amount: <span>${fee.amount_range}</span>
-                        | Type: <span>${fee['quantified?'] ? 'Quantified' : 'Standard'}</span>
-                    </div>
-                </div>
-                <div class="tax-actions">
-                    <button class="btn btn-secondary btn-sm" onclick="editTax(${fee.collection_fee_id})">Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="promptDelete(${fee.collection_fee_id})">Delete</button>
-                </div>
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>${fee.product_services}</strong></td>
+                <td><span style="font-weight: 600; color: var(--primary-color);">${fee.amount_range}</span></td>
+                <td>${fee['quantified?'] ? 'Quantified' : 'Standard'}</td>
+                <td style="text-align: right;">
+                    <button class="btn btn-secondary btn-sm" onclick="editTax(${fee.collection_fee_id})">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="promptDelete(${fee.collection_fee_id})" style="margin-left: 5px;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
             `;
-            list.appendChild(item);
+            tbody.appendChild(row);
         });
-
-
-        groupDiv.appendChild(list);
-        container.appendChild(groupDiv);
     }
+
+
+    tableContainer.appendChild(table);
+    container.appendChild(tableContainer);
 }
 
 
-// Notifications
 function showNotification(message, type = 'success') {
     const container = document.getElementById('notificationsContainer');
     if (!container) return;
@@ -220,15 +218,12 @@ function showNotification(message, type = 'success') {
 
     const notif = document.createElement('div');
     notif.className = `notification ${type}`;
-    // Inline styles as fallback in case CSS isn't present
-    notif.style.cssText = `padding: 10px 15px; margin-bottom: 10px; border-radius: 4px; color: white; background-color: ${type === 'success' ? '#28a745' : '#dc3545'};`;
     notif.textContent = message;
 
 
     container.appendChild(notif);
 
 
-    // Remove notification after 3 seconds
     setTimeout(() => {
         notif.remove();
     }, 3000);
@@ -237,14 +232,14 @@ function showNotification(message, type = 'success') {
 
 
 
-// --- MODAL CONTROLS (Attached to window for inline HTML calls) ---
+// --- MODAL CONTROLS ---
 
 
 window.openAddTaxModal = function() {
     currentEditingId = null;
     document.getElementById('modalTitle').textContent = 'Add New Tax';
     document.getElementById('taxForm').reset();
-    updateRangeFields(); // Ensure layout resets
+    window.updateRangeFields();
     document.getElementById('addTaxModal').classList.remove('hidden');
 };
 
@@ -264,13 +259,11 @@ window.editTax = function(id) {
     document.getElementById('modalTitle').textContent = 'Edit Tax';
 
 
-    // Populate standard fields
     document.getElementById('area').value = tax.area;
     document.getElementById('productServices').value = tax.product_services;
     document.getElementById('quantified').checked = tax['quantified?'];
 
 
-    // Handle Amount vs Range logic based on formatting string
     if (tax.amount_range.includes('-')) {
         document.querySelector('input[name="rangeType"][value="range"]').checked = true;
         const [min, max] = tax.amount_range.split('-').map(s => s.trim());
@@ -302,26 +295,19 @@ window.closeDeleteConfirm = function() {
 window.updateRangeFields = function() {
     const rangeType = document.querySelector('input[name="rangeType"]:checked').value;
     const rangeFields = document.getElementById('rangeFields');
-    const amountInput = document.getElementById('amount');
-    const amountGroup = amountInput.closest('.form-group');
+    const amountGroup = document.getElementById('amount-group');
 
 
     if (rangeType === 'range') {
         rangeFields.classList.remove('hidden');
         amountGroup.classList.add('hidden');
-
-
-        // Toggle required attributes
-        amountInput.required = false;
+        document.getElementById('amount').required = false;
         document.getElementById('rangeMin').required = true;
         document.getElementById('rangeMax').required = true;
     } else {
         rangeFields.classList.add('hidden');
         amountGroup.classList.remove('hidden');
-
-
-        // Toggle required attributes
-        amountInput.required = true;
+        document.getElementById('amount').required = true;
         document.getElementById('rangeMin').required = false;
         document.getElementById('rangeMax').required = false;
     }

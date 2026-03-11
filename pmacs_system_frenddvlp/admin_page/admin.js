@@ -52,6 +52,21 @@ function updateDashboard(docs) {
     document.getElementById('stat-pending').textContent = pendingCount;
     document.getElementById('stat-attendance').textContent = `${attendanceRate}%`;
 }
+// --- DATE FORMATTING ---
+const options = { year: "numeric", month: "long", day: "numeric" };
+const dateElement = document.getElementById("currentDate");
+
+if (dateElement) {
+    dateElement.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
+}
+
+
+function escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = String(text).toUpperCase();
+    return div.innerHTML;
+}
 
 // --- FETCH RECENT ACTIVITY ---
 async function fetchRecentActivity() {

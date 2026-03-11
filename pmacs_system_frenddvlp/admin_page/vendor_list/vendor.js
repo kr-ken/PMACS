@@ -255,5 +255,17 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
+const searchInput = document.getElementById('vendorSearch');
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#vendor-list tr:not(.area-separator)');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+}
+
 // Initial Load
 fetchVendors();
