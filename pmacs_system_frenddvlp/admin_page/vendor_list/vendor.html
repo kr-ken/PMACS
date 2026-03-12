@@ -150,6 +150,73 @@
             font-weight: 600;
             margin-right: 4px;
         }
+
+        /* Stepper UI */
+        .form-stepper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+            padding: 0 50px;
+        }
+        .form-stepper::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            right: 50px;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+        .step-progress-line {
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            width: 0%;
+            height: 2px;
+            background: var(--primary-color);
+            z-index: 1;
+            transform: translateY(-50%);
+            transition: width 0.3s ease;
+        }
+        .step-item {
+            position: relative;
+            z-index: 2;
+            width: 35px;
+            height: 35px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #64748b;
+            transition: 0.3s;
+        }
+        .step-item.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+        .step-item.completed {
+            border-color: var(--success-color);
+            background: var(--success-color);
+            color: white;
+        }
+
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .btn-success:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 
@@ -191,6 +258,9 @@
             </div>
         </div>
         <div class="header-right">
+            <button class="btn btn-secondary" id="btnRevalidate" style="margin-right: 10px;">
+                <i class="fa-solid fa-arrows-rotate"></i> RE-VALIDATE
+            </button>
             <button class="btn btn-primary" id="btnAddVendor" style="margin-right: 15px;">
                 <i class="fa-solid fa-user-plus"></i> ADD VENDOR
             </button>
@@ -222,122 +292,141 @@
 </main>
 
 
-<!-- Add/Edit Vendor Modal -->
+<!-- Multi-Step Vendor Modal -->
 <div id="vendorModal" class="modal-overlay hidden">
     <div class="modal-content" style="max-width: 900px;">
         <div class="modal-header">
             <h2 id="modalTitle">Add New Vendor</h2>
             <button class="close-btn" id="closeVendorModal">&times;</button>
         </div>
+
+        <div class="form-stepper">
+            <div class="step-progress-line" id="stepProgressLine"></div>
+            <div class="step-item active" data-step="1">1</div>
+            <div class="step-item" data-step="2">2</div>
+            <div class="step-item" data-step="3">3</div>
+        </div>
+
         <div class="modal-body">
             <form id="vendorForm" class="tax-form">
                 <input type="hidden" id="vendor_id" name="vendor_id">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <!-- Column 1 -->
-                    <div>
-                        <div class="form-group">
-                            <label for="vendor_name">Full Name</label>
-                            <input type="text" id="vendor_name" name="vendor_name" required
-                                   placeholder="Last Name, First Name Middle Name">
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_gender">Gender</label>
-                            <select id="vendor_gender" name="vendor_gender" required>
-                                <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_birthdate">Birthdate</label>
-                            <input type="date" id="vendor_birthdate" name="vendor_birthdate" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_address">Address</label>
-                            <input type="text" id="vendor_address" name="vendor_address" required
-                                   placeholder="Street, Barangay, City">
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_number">Contact Number</label>
-                            <input type="text" id="vendor_number" name="vendor_number" required
-                                   placeholder="09xxxxxxxxx">
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_email">Email Address</label>
-                            <input type="email" id="vendor_email" name="vendor_email" required
-                                   placeholder="example@email.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_stand_in">Stand-in Name (Optional)</label>
-                            <input type="text" id="vendor_stand_in" name="vendor_stand_in"
-                                   placeholder="Representative Name">
-                        </div>
-                    </div>
-                    <!-- Column 2 -->
-                    <div>
-                        <div class="form-group">
-                            <label for="vendor_stall_name">Stall Name</label>
-                            <input type="text" id="vendor_stall_name" name="vendor_stall_name" required
-                                   placeholder="e.g. Mario's Meat Section">
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_stall_number">Stall Number</label>
-                            <input type="number" id="vendor_stall_number" name="vendor_stall_number" required
-                                   placeholder="e.g. 101">
-                        </div>
-                        <div class="form-group">
-                            <label for="vendor_stall_area">Stall Area</label>
-                            <select id="vendor_stall_area" name="vendor_stall_area" required>
-                                <option value="">Select Area</option>
-                                <!-- Options will be loaded from collection_fees -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="product_services">Product/Services</label>
-                            <select id="product_services" name="product_services" required>
-                                <option value="">Select Service</option>
-                                <!-- Options will be loaded from collection_fees based on area -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Status & Validity</label>
-                            <div class="checkbox-group" style="display: flex; gap: 20px;">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="vendor_status" name="vendor_status" checked> Active
-                                    Status
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="vendor_validity" name="vendor_validity" checked>
-                                    Valid Permit
-                                </label>
-                            </div>
-                        </div>
 
-
-                        <!-- Automatic Credentials Preview -->
-                        <div id="credentialsSection"
-                                style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px; border: 1px solid #cce3ff;">
-                            <h4 style="margin-bottom: 10px; color: var(--primary-blue);">Generated Login Credentials
-                            </h4>
+                <!-- Step 1: Basic Details -->
+                <div class="form-step active" id="step1">
+                    <h3 style="margin-bottom: 20px; color: var(--primary-color);">Step 1: Vendor Information</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
                             <div class="form-group">
-                                <label style="font-size: 0.85em; color: #555;">Username</label>
-                                <input type="text" id="generated_username" readonly
-                                       style="background: #e9ecef; cursor: not-allowed;">
+                                <label for="vendor_name">Full Name</label>
+                                <input type="text" id="vendor_name" name="vendor_name" required placeholder="Last Name, First Name Middle Name">
                             </div>
                             <div class="form-group">
-                                <label style="font-size: 0.85em; color: #555;">Initial Password</label>
-                                <input type="text" id="generated_password" readonly
-                                       style="background: #e9ecef; cursor: not-allowed;">
+                                <label for="vendor_gender">Gender</label>
+                                <select id="vendor_gender" name="vendor_gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_birthdate">Birthdate</label>
+                                <input type="date" id="vendor_birthdate" name="vendor_birthdate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_address">Address</label>
+                                <input type="text" id="vendor_address" name="vendor_address" required placeholder="Street, Barangay, City">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_number">Contact Number</label>
+                                <input type="text" id="vendor_number" name="vendor_number" required placeholder="09xxxxxxxxx">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_email">Email Address (Optional)</label>
+                                <input type="email" id="vendor_email" name="vendor_email" placeholder="example@email.com">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label for="vendor_stall_name">Stall Name</label>
+                                <input type="text" id="vendor_stall_name" name="vendor_stall_name" required placeholder="e.g. Mario's Meat Section">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_stall_number">Stall Number</label>
+                                <input type="number" id="vendor_stall_number" name="vendor_stall_number" required placeholder="e.g. 101">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_stall_area">Stall Area</label>
+                                <select id="vendor_stall_area" name="vendor_stall_area" required>
+                                    <option value="">Select Area</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="product_services">Product/Services</label>
+                                <select id="product_services" name="product_services" required>
+                                    <option value="">Select Service</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="vendor_stand_in">Stand-in Name (Optional)</label>
+                                <input type="text" id="vendor_stand_in" name="vendor_stand_in" placeholder="Representative Name">
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Step 2: Validity Details -->
+                <div class="form-step" id="step2">
+                    <h3 style="margin-bottom: 20px; color: var(--primary-color);">Step 2: Permit & Validity Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <div class="form-group">
+                                <label for="business_id_no">Business ID No.</label>
+                                <input type="text" id="business_id_no" name="business_id_no" required placeholder="G-000000-00000">
+                            </div>
+                            <div class="form-group">
+                                <label for="business_tin">Business TIN</label>
+                                <input type="text" id="business_tin" name="business_tin" required placeholder="000-000-000-000">
+                            </div>
+                            <div class="form-group">
+                                <label for="business_permit_no">Business Permit No.</label>
+                                <input type="text" id="business_permit_no" name="business_permit_no" required placeholder="2024-00000000-0000">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label for="date_issued">Date Issued</label>
+                                <input type="date" id="date_issued" name="date_issued" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="valid_until">Valid Until</label>
+                                <input type="date" id="valid_until" name="valid_until" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="form-actions" style="margin-top: 20px;">
-                    <button type="submit" class="btn btn-primary" id="submitBtn">Register Vendor</button>
-                    <button type="button" class="btn btn-secondary" id="cancelVendorModal">Cancel</button>
+                <!-- Step 3: Login Credentials -->
+                <div class="form-step" id="step3">
+                    <h3 style="margin-bottom: 20px; color: var(--primary-color);">Step 3: Login Credentials</h3>
+                    <div style="max-width: 500px; margin: 0 auto; background: #f0f7ff; padding: 25px; border-radius: 12px; border: 1px solid #cce3ff;">
+                        <p style="margin-bottom: 20px; color: #555; text-align: center;">Credentials are automatically generated based on vendor details.</p>
+                        <div class="form-group">
+                            <label>Generated Username</label>
+                            <input type="text" id="generated_username" readonly style="background: #e9ecef; font-weight: 600; color: var(--primary-color);">
+                        </div>
+                        <div class="form-group">
+                            <label>Initial Password</label>
+                            <input type="text" id="generated_password" readonly style="background: #e9ecef; font-weight: 600; color: var(--primary-color);">
+                        </div>
+                        <p style="font-size: 12px; color: #7f8c8d; margin-top: 15px; text-align: center;">Vendor can change their password after first login.</p>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <button type="button" class="btn btn-secondary hidden" id="prevBtn">Back</button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
+                    <button type="submit" class="btn btn-success hidden" id="submitBtn">Finish & Register</button>
                 </div>
             </form>
         </div>
@@ -356,9 +445,6 @@
             <div id="validityDetails" style="line-height: 1.8;">
                 <!-- Content injected by JS -->
             </div>
-        </div>
-        <div class="form-actions">
-            <button class="btn btn-primary" id="closeValidityBtn">Close</button>
         </div>
     </div>
 </div>
