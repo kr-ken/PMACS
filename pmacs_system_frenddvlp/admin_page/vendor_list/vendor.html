@@ -8,6 +8,149 @@
     <title>PMACS - Vendor Tax Collection</title>
     <link rel="stylesheet" href="../admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+        }
+        .btn-edit {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+        }
+        .btn-edit:hover {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #ffebee;
+            color: #e53935;
+        }
+        .btn-delete:hover {
+            background-color: #e53935;
+            color: white;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .center-col { text-align: center; }
+        .btn-danger {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Info Badge Styles */
+        .info-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            background: #e0f2fe;
+            color: #0369a1;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+        .info-badge:hover {
+            background: #bae6fd;
+            transform: translateY(-1px);
+        }
+
+        /* Validity Badge Styles */
+        .validity-info-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .validity-info-badge.valid { background: #dcfce7; color: #166534; }
+        .validity-info-badge.warning { background: #fef9c3; color: #854d0e; }
+        .validity-info-badge.expired { background: #fee2e2; color: #991b1b; }
+        .validity-info-badge.no-data { background: #f1f5f9; color: #475569; }
+
+        /* Tooltip */
+        .tooltip {
+            visibility: hidden;
+            width: 220px;
+            background-color: #334155;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-weight: 400;
+            line-height: 1.4;
+            font-size: 11px;
+            text-transform: none;
+        }
+        .info-badge:hover .tooltip, .validity-info-badge:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #334155 transparent transparent transparent;
+        }
+
+        /* Stall Info Styling in Table */
+        .stall-info-text {
+            font-size: 12px;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+        .stall-info-text span {
+            color: #64748b;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+    </style>
 </head>
 
 
@@ -42,9 +185,9 @@
     <div class="page-header">
         <div class="header-left">
             <div class="title-area">
-                <h1>VENDOR TAX COLLECTION</h1>
-                <p>RECORDS TAX AND ATTENDANCE OF VENDORS</p>
-                <h2 class="date-display" id="currentDate">XXXXXX XX XXXX (DATE)</h2>
+                <h1>VENDOR ADMINISTRATION</h1>
+                <p>MANAGE THE LIST AND VALIDITY OF VENDORS</p>
+                <h2 class="date-display" id="currentDate">LOADING DATE...</h2>
             </div>
         </div>
         <div class="header-right">
@@ -64,9 +207,12 @@
             <thead>
             <tr>
                 <th>VENDOR NAME</th>
-                <th>STALL TYPE</th>
-                <th class="center-col">ATTENDANCE</th>
+                <th class="center-col">DETAILS</th>
+                <th>STALL INFO</th>
+                <th class="center-col">ACTIVITY</th>
                 <th class="center-col">TAX</th>
+                <th class="center-col">PERMIT VALIDITY</th>
+                <th class="center-col">ACTIONS</th>
             </tr>
             </thead>
             <tbody id="vendor-list">
@@ -76,15 +222,16 @@
 </main>
 
 
-<!-- Add Vendor Modal -->
+<!-- Add/Edit Vendor Modal -->
 <div id="vendorModal" class="modal-overlay hidden">
     <div class="modal-content" style="max-width: 900px;">
         <div class="modal-header">
-            <h2>Add New Vendor</h2>
+            <h2 id="modalTitle">Add New Vendor</h2>
             <button class="close-btn" id="closeVendorModal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="vendorForm" class="tax-form">
+                <input type="hidden" id="vendor_id" name="vendor_id">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <!-- Column 1 -->
                     <div>
@@ -169,7 +316,7 @@
 
 
                         <!-- Automatic Credentials Preview -->
-                        <div
+                        <div id="credentialsSection"
                                 style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px; border: 1px solid #cce3ff;">
                             <h4 style="margin-bottom: 10px; color: var(--primary-blue);">Generated Login Credentials
                             </h4>
@@ -189,10 +336,49 @@
 
 
                 <div class="form-actions" style="margin-top: 20px;">
-                    <button type="submit" class="btn btn-primary">Register Vendor</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Register Vendor</button>
                     <button type="button" class="btn btn-secondary" id="cancelVendorModal">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Validity/Profile Details Modal -->
+<div id="validityModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h2 id="validityModalTitle">Details</h2>
+            <button class="close-btn" id="closeValidityModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="validityDetails" style="line-height: 1.8;">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" id="closeValidityBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h2>Delete Vendor</h2>
+            <button class="close-btn" id="closeDeleteModal">&times;</button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 20px 0;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: var(--accent-color); margin-bottom: 15px;"></i>
+            <p>Are you sure you want to delete vendor <strong id="deleteVendorName"></strong>?</p>
+            <p style="color: #7f8c8d; font-size: 13px; margin-top: 10px;">This action will permanently remove the vendor and their login credentials.</p>
+        </div>
+        <div class="form-actions" style="justify-content: center;">
+            <button class="btn btn-danger" id="confirmDeleteBtn">Delete Vendor</button>
+            <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
         </div>
     </div>
 </div>

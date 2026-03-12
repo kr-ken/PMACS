@@ -162,7 +162,7 @@ function renderTaxes() {
                 <th>PRODUCT / SERVICE</th>
                 <th>AMOUNT RANGE</th>
                 <th>TYPE</th>
-                <th style="text-align: right;">ACTIONS</th>
+                <th style="text-align: center;">ACTIONS</th>
             </tr>
         </thead>
         <tbody id="taxTableBody"></tbody>
@@ -192,13 +192,17 @@ function renderTaxes() {
                 <td><strong>${fee.product_services}</strong></td>
                 <td><span style="font-weight: 600; color: var(--primary-color);">${fee.amount_range}</span></td>
                 <td>${fee['quantified?'] ? 'Quantified' : 'Standard'}</td>
-                <td style="text-align: right;">
-                    <button class="btn btn-secondary btn-sm" onclick="editTax(${fee.collection_fee_id})">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="promptDelete(${fee.collection_fee_id})" style="margin-left: 5px;">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                <td>
+                    <div class="action-btns" style="display: flex; gap: 8px; justify-content: center;">
+                        <button class="btn-icon btn-edit" onclick="editTax(${fee.collection_fee_id})"
+                                style="width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; border: none; font-size: 14px; background-color: #e3f2fd; color: #1e88e5;">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="promptDelete(${fee.collection_fee_id})"
+                                style="width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; border: none; font-size: 14px; background-color: #ffebee; color: #e53935;">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(row);
