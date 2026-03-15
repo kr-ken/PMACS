@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="header-right">
-                <button id="openTaxList" class="tax-list-trigger">
+                <button id="openTaxList" class="tax-list-trigger" onclick="window.openTaxList()">
                     <i class="fa-solid fa-file-invoice-dollar"></i> TAX LIST
                 </button>
                 <div class="search-box">
@@ -59,6 +59,7 @@
                         <th>STALL TYPE</th>
                         <th class="center-col">ATTENDANCE</th>
                         <th class="center-col">TAX</th>
+                        <th class="center-col">ACTION</th>
                     </tr>
                 </thead>
                 <tbody id="vendor-list">
@@ -72,7 +73,7 @@
         <div class="tax-modal-content">
             <div class="modal-header">
                 <h2>OFFICIAL COLLECTION FEES</h2>
-                <button id="closeTaxList" class="close-btn">&times;</button>
+                <button id="closeTaxList" class="close-btn" onclick="window.closeTaxList()">&times;</button>
             </div>
             <div class="modal-body">
                 <table class="modal-table">
@@ -90,6 +91,32 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div id="confirmModalOverlay" class="modal-overlay">
+        <div class="tax-modal-content" style="max-width: 450px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; background: var(--warning-color);">
+                <h2>UPLOAD WARNING</h2>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <i class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: var(--warning-color); margin-bottom: 15px;"></i>
+                <p id="confirmMessage" style="font-weight: 600; font-size: 16px;"></p>
+                <p style="color: #7f8c8d; margin-top: 10px;">Do you want to proceed with the upload?</p>
+                <div style="display: flex; gap: 15px; margin-top: 25px; justify-content: center;">
+                    <button class="btn-done" style="background: var(--primary-color);" onclick="window.confirmUpload(true)">PROCEED</button>
+                    <button class="btn-done" style="background: #95a5a6;" onclick="window.confirmUpload(false)">CANCEL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sticky-footer">
+        <button id="btnFinishCollection" class="btn-finish" onclick="window.finishAndUpload()">
+            <i class="fa-solid fa-cloud-arrow-up"></i> FINISH & UPLOAD
+        </button>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notificationsContainer" class="notifications-container"></div>
 
     <script type="module" src="tax_collection.js"></script>
 </body>

@@ -226,12 +226,151 @@ body {
     color: #475569;
 }
 
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+}
+.btn-success:hover {
+    opacity: 0.9;
+}
+
+.btn-danger {
+    background-color: var(--accent-color);
+    color: white;
+}
+.btn-danger:hover {
+    opacity: 0.9;
+}
+
+/* Action Buttons for Tables */
+.action-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 14px;
+}
+.btn-edit {
+    background-color: #e3f2fd;
+    color: #1e88e5;
+}
+.btn-edit:hover {
+    background-color: #1e88e5;
+    color: white;
+}
+.btn-delete {
+    background-color: #ffebee;
+    color: #e53935;
+}
+.btn-delete:hover {
+    background-color: #e53935;
+    color: white;
+}
+
 /* Badges */
 .status-badge, .validity-badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 .status-badge.active { background: #dcfce7; color: #166534; }
 .status-badge.inactive { background: #fee2e2; color: #991b1b; }
 .validity-badge.valid { background: #dbeafe; color: #1e40af; }
 .validity-badge.invalid { background: #ffedd5; color: #9a3412; }
+
+/* Info Badge Styles (from Vendor List) */
+.info-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: #e0f2fe;
+    color: #0369a1;
+    transition: 0.3s;
+    text-transform: uppercase;
+}
+.info-badge:hover {
+    background: #bae6fd;
+    transform: translateY(-1px);
+}
+
+/* Validity Badge Styles (from Vendor List) */
+.validity-info-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.validity-info-badge.valid { background: #dcfce7; color: #166534; }
+.validity-info-badge.warning { background: #fef9c3; color: #854d0e; }
+.validity-info-badge.expired { background: #fee2e2; color: #991b1b; }
+.validity-info-badge.no-data { background: #f1f5f9; color: #475569; }
+
+/* Tooltip */
+.tooltip {
+    visibility: hidden;
+    width: 220px;
+    background-color: #334155;
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    font-weight: 400;
+    line-height: 1.4;
+    font-size: 11px;
+    text-transform: none;
+}
+.info-badge:hover .tooltip, .validity-info-badge:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+.tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #334155 transparent transparent transparent;
+}
+
+/* Stall Info Styling in Table */
+.stall-info-text {
+    font-size: 12px;
+    line-height: 1.6;
+    font-weight: 600;
+}
+.stall-info-text span {
+    color: #64748b;
+    font-weight: 600;
+    margin-right: 4px;
+}
 
 /* Notifications */
 .notif-history { margin-top: 40px; background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -257,7 +396,7 @@ body {
     background: white;
     border-radius: 10px;
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-    overflow-x: auto; /* Changed from hidden to auto for responsiveness */
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -268,6 +407,17 @@ tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
 tbody tr:hover { background: #f8fafc; }
 td { padding: 15px 20px; font-size: 14px; }
 .area-separator { background-color: #f1f5f9; font-weight: 700; color: var(--primary-color); text-transform: uppercase; font-size: 12px; }
+
+/* Area Separator Styling specifically for Tax List */
+.area-separator td {
+    background-color: #f1f5f9;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 12px 20px;
+    border-left: 4px solid var(--primary-color);
+}
 
 /* MODAL STYLES */
 .modal-overlay {
@@ -294,12 +444,132 @@ td { padding: 15px 20px; font-size: 14px; }
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
 /* Form Styles for Modals */
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
 .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
 
+/* Remove red border for invalid fields by default and when not submitted */
+.form-group input:invalid, .form-group select:invalid {
+    box-shadow: none;
+}
+
+/* Only show invalid styling when the user tries to submit (via JS class) or if you want standard browser behavior to be hidden */
+.modal-overlay.hidden input, .modal-overlay.hidden select {
+    border-color: #ddd !important;
+}
+
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* Radio and Checkbox Groups for Tax List */
+.radio-group {
+    display: flex;
+    gap: 20px;
+    margin-top: 8px;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #475569;
+}
+.checkbox-group {
+    background: #f0f7ff;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #cce3ff;
+    margin-top: 10px;
+}
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+/* Stepper UI (from Vendor List) */
+.form-stepper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    position: relative;
+    padding: 0 50px;
+}
+.form-stepper::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50px;
+    right: 50px;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+    transform: translateY(-50%);
+}
+.step-progress-line {
+    position: absolute;
+    top: 50%;
+    left: 50px;
+    width: 0%;
+    height: 2px;
+    background: var(--primary-color);
+    z-index: 1;
+    transform: translateY(-50%);
+    transition: width 0.3s ease;
+}
+.step-item {
+    position: relative;
+    z-index: 2;
+    width: 35px;
+    height: 35px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #64748b;
+    transition: 0.3s;
+}
+.step-item.active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+.step-item.completed {
+    border-color: var(--success-color);
+    background: var(--success-color);
+    color: white;
+}
+
+.form-step { display: none; }
+.form-step.active { display: block; }
 
 /* SEARCH BOX */
 .search-box {
@@ -330,6 +600,9 @@ td { padding: 15px 20px; font-size: 14px; }
     width: 100%;
 }
 
+/* Helper Classes */
+.center-col { text-align: center; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .nav-top-row {
@@ -344,7 +617,7 @@ td { padding: 15px 20px; font-size: 14px; }
     }
 
     .menu-item {
-        flex: 1 0 50%; /* 2 items per row */
+        flex: 1 0 50%;
         padding: 12px;
         font-size: 12px;
     }
@@ -373,32 +646,11 @@ td { padding: 15px 20px; font-size: 14px; }
     .title-area h1 {
         font-size: 24px;
     }
-
-    .notification-item {
-        padding: 15px;
-    }
-
-    .notification-icon {
-        width: 40px;
-        height: 40px;
-    }
-
-    .notification-icon i {
-        font-size: 16px;
-    }
-
-    .notification-content h4 {
-        font-size: 14px;
-    }
-
-    .notification-content p {
-        font-size: 13px;
-    }
 }
 
 @media (max-width: 480px) {
     .menu-item {
-        flex: 1 0 100%; /* 1 item per row */
+        flex: 1 0 100%;
     }
 
     .logo-area h2 {
@@ -407,15 +659,5 @@ td { padding: 15px 20px; font-size: 14px; }
 
     .stat-value {
         font-size: 1.8rem;
-    }
-
-    .notification-item {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .notification-icon {
-        width: 35px;
-        height: 35px;
     }
 }

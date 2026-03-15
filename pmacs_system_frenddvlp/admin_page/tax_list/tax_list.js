@@ -16,6 +16,7 @@ let taxToDeleteId = null;
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     fetchTaxes();
+    updateCurrentDate();
 
 
     // Attach form submit event listener
@@ -24,6 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', handleTaxSubmit);
     }
 });
+
+
+// --- DATE FORMATTING ---
+function updateCurrentDate() {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    const dateElement = document.getElementById("currentDate");
+    if (dateElement) {
+        dateElement.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
+    }
+}
 
 
 // --- API OPERATIONS ---
@@ -241,6 +252,7 @@ function showNotification(message, type = 'success') {
 
 window.openAddTaxModal = function() {
     currentEditingId = null;
+    resetValidationStyles();
     document.getElementById('modalTitle').textContent = 'Add New Tax';
     document.getElementById('taxForm').reset();
     window.updateRangeFields();
@@ -250,6 +262,7 @@ window.openAddTaxModal = function() {
 
 window.closeAddTaxModal = function() {
     document.getElementById('addTaxModal').classList.add('hidden');
+    resetValidationStyles();
     currentEditingId = null;
 };
 
@@ -259,6 +272,7 @@ window.editTax = function(id) {
     if (!tax) return;
 
 
+    resetValidationStyles();
     currentEditingId = id;
     document.getElementById('modalTitle').textContent = 'Edit Tax';
 
@@ -316,3 +330,10 @@ window.updateRangeFields = function() {
         document.getElementById('rangeMax').required = false;
     }
 };
+
+function resetValidationStyles() {
+    const allInputs = document.querySelectorAll('#taxForm input');
+    allInputs.forEach(input => {
+        input.style.borderColor = '';
+    });
+}

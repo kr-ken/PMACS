@@ -1,233 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMACS - Vendor Tax Collection</title>
+    <title>PMACS - Vendor Administration</title>
     <link rel="stylesheet" href="../admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .action-btns {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-        .btn-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-            font-size: 14px;
-        }
-        .btn-edit {
-            background-color: #e3f2fd;
-            color: #1e88e5;
-        }
-        .btn-edit:hover {
-            background-color: #1e88e5;
-            color: white;
-        }
-        .btn-delete {
-            background-color: #ffebee;
-            color: #e53935;
-        }
-        .btn-delete:hover {
-            background-color: #e53935;
-            color: white;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-        }
-        .center-col { text-align: center; }
-        .btn-danger {
-            background-color: var(--accent-color);
-            color: white;
-        }
-
-        /* Info Badge Styles */
-        .info-badge {
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            background: #e0f2fe;
-            color: #0369a1;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-        .info-badge:hover {
-            background: #bae6fd;
-            transform: translateY(-1px);
-        }
-
-        /* Validity Badge Styles */
-        .validity-info-badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .validity-info-badge.valid { background: #dcfce7; color: #166534; }
-        .validity-info-badge.warning { background: #fef9c3; color: #854d0e; }
-        .validity-info-badge.expired { background: #fee2e2; color: #991b1b; }
-        .validity-info-badge.no-data { background: #f1f5f9; color: #475569; }
-
-        /* Tooltip */
-        .tooltip {
-            visibility: hidden;
-            width: 220px;
-            background-color: #334155;
-            color: #fff;
-            text-align: left;
-            border-radius: 6px;
-            padding: 10px;
-            position: absolute;
-            z-index: 100;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            font-weight: 400;
-            line-height: 1.4;
-            font-size: 11px;
-            text-transform: none;
-        }
-        .info-badge:hover .tooltip, .validity-info-badge:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-        .tooltip::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #334155 transparent transparent transparent;
-        }
-
-        /* Stall Info Styling in Table */
-        .stall-info-text {
-            font-size: 12px;
-            line-height: 1.6;
-            font-weight: 600;
-        }
-        .stall-info-text span {
-            color: #64748b;
-            font-weight: 600;
-            margin-right: 4px;
-        }
-
-        /* Stepper UI */
-        .form-stepper {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            position: relative;
-            padding: 0 50px;
-        }
-        .form-stepper::before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50px;
-            right: 50px;
-            height: 2px;
-            background: #e2e8f0;
-            z-index: 1;
-            transform: translateY(-50%);
-        }
-        .step-progress-line {
-            position: absolute;
-            top: 50%;
-            left: 50px;
-            width: 0%;
-            height: 2px;
-            background: var(--primary-color);
-            z-index: 1;
-            transform: translateY(-50%);
-            transition: width 0.3s ease;
-        }
-        .step-item {
-            position: relative;
-            z-index: 2;
-            width: 35px;
-            height: 35px;
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: #64748b;
-            transition: 0.3s;
-        }
-        .step-item.active {
-            border-color: var(--primary-color);
-            background: var(--primary-color);
-            color: white;
-        }
-        .step-item.completed {
-            border-color: var(--success-color);
-            background: var(--success-color);
-            color: white;
-        }
-
-        .form-step { display: none; }
-        .form-step.active { display: block; }
-
-        .btn-success {
-            background-color: var(--success-color);
-            color: white;
-        }
-        .btn-success:hover {
-            opacity: 0.9;
-        }
-    </style>
 </head>
 
-
 <body>
-
 
 <header class="top-nav">
     <div class="nav-top-row">
         <div class="logo-area">
-            <div class="logo-icon"><img src="../pmacs_logo_bw.png" alt="PMACS Logo"></div>
+            <div class="logo-icon"><img src="../../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
             <h2>PMACS Admin</h2>
         </div>
         <div class="top-links">
@@ -236,17 +23,15 @@
         </div>
     </div>
 
-
     <nav class="main-menu">
         <a href="../vendor_list/vendor.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
-        <a href="../admin.html" class="menu-item" data-no-transition>DASHBOARD <i
+        <a href="../admin.html" class="menu-item">DASHBOARD <i
                 class="fa-solid fa-chalkboard"></i></a>
         <a href="../notification/notification.html" class="menu-item">NOTIFICATIONS <i
                 class="fa-solid fa-bell"></i></a>
         <a href="../tax_list/tax_list.html" class="menu-item">TAX LIST <i class="fa-solid fa-receipt"></i></a>
     </nav>
 </header>
-
 
 <main class="main-content">
     <div class="page-header">
@@ -258,8 +43,11 @@
             </div>
         </div>
         <div class="header-right">
-            <button class="btn btn-secondary" id="btnRevalidate" style="margin-right: 10px;">
-                <i class="fa-solid fa-arrows-rotate"></i> RE-VALIDATE
+            <button class="btn btn-secondary" onclick="window.refreshVendorData()" style="margin-right: 10px;">
+                <i class="fa-solid fa-arrows-rotate"></i> REFRESH
+            </button>
+            <button class="btn btn-secondary" onclick="window.revalidateVendorPermits()" style="margin-right: 10px;">
+                <i class="fa-solid fa-check-double"></i> RE-VALIDATE
             </button>
             <button class="btn btn-primary" id="btnAddVendor" style="margin-right: 15px;">
                 <i class="fa-solid fa-user-plus"></i> ADD VENDOR
@@ -270,7 +58,6 @@
             </div>
         </div>
     </div>
-
 
     <div class="table-container">
         <table id="taxTable">
@@ -290,7 +77,6 @@
         </table>
     </div>
 </main>
-
 
 <!-- Multi-Step Vendor Modal -->
 <div id="vendorModal" class="modal-overlay hidden">
@@ -434,9 +220,9 @@
 </div>
 
 
-<!-- Validity/Profile Details Modal -->
+<!-- Details Modal -->
 <div id="validityModal" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
             <h2 id="validityModalTitle">Details</h2>
             <button class="close-btn" id="closeValidityModal">&times;</button>
@@ -473,10 +259,7 @@
 <!-- Notifications Container -->
 <div id="notificationsContainer" class="notifications-container"></div>
 
-
-<script src="transitions/page-transitions.js" defer></script>
 <script type="module" src="vendor.js"></script>
 </body>
-
 
 </html>

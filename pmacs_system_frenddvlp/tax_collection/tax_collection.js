@@ -1,13 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-
 import {
-    getFirestore, collection, getDocs, addDoc, updateDoc, doc, onSnapshot,
+    getFirestore, doc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-// Import Supabase
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// --- CONFIGURATION FROM YOUR KEYS ---
+// --- CONFIGURATION ---
 const firebaseConfig = {
     apiKey: "AIzaSyA0zUwFQHAG0jMLGoTwKHzntCoyksX4dnw",
     authDomain: "pmacs-0001.firebaseapp.com",
@@ -21,38 +18,41 @@ const firebaseConfig = {
 const supabaseUrl = 'https://kbrwqixrbxlmopyxbrnj.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA';
 
-
-// Initialize Clients
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Tax Rates Fallback (for vendor table)
-const taxRates = { "Meat": 20, "Vegetables": 10, "Dry Goods": 50, "Fish": 15, "Default": 10 };
+// --- GLOBAL STATE ---
+let allVendors = [];
+let taxFeesLookup = {};
 
-
-// --- UI LOGIC: DATE ---
-const options = { year: "numeric", month: "long", day: "numeric" };
-const dateElement = document.getElementById("currentDate");
-
-if (dateElement) {
-    dateElement.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
+// --- INITIALIZATION ---
+async function init() {
+    updateDateDisplay();
+    await loadTaxRates();
+    await fetchVendors();
 }
 
-
-function escapeHtml(text) {
-    if (!text) return "";
-    const div = document.createElement("div");
-    div.textContent = String(text).toUpperCase();
-    return div.innerHTML;
+function updateDateDisplay() {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    const dateEl = document.getElementById("currentDate");
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
 }
 
-// --- VENDOR TABLE (SUPABASE) ---
+async function loadTaxRates() {
+    const { data, error } = await supabase.from('collection_fees').select('product_services, amount_range');
+    if (!error && data) {
+        data.forEach(fee => {
+            taxFeesLookup[fee.product_services] = fee.amount_range;
+        });
+    }
+}
+
 async function fetchVendors() {
     const tableBody = document.getElementById("vendor-list");
     if (!tableBody) return;
 
-    tableBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px;'>Loading vendors...</td></tr>";
+    tableBody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:20px;'>Loading vendors...</td></tr>";
 
     const { data: vendors, error } = await supabase
         .from('vendor_details')
@@ -60,26 +60,21 @@ async function fetchVendors() {
         .order('vendor_stall_area', { ascending: true });
 
     if (error) {
-        console.error("Error fetching vendors:", error);
-        tableBody.innerHTML = `<tr><td colspan='4' style='text-align:center; color:red;'>Error loading vendors: ${error.message}</td></tr>`;
+        console.error("Error loading vendors:", error);
         return;
     }
 
-    renderVendors(vendors);
+    allVendors = vendors || [];
+    renderVendors();
 }
 
-function renderVendors(vendors) {
+function renderVendors() {
     const tableBody = document.getElementById("vendor-list");
     if (!tableBody) return;
     tableBody.innerHTML = "";
 
-    if (!vendors || vendors.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px;'>No vendors registered yet.</td></tr>";
-        return;
-    }
-
-    const groupedVendors = vendors.reduce((acc, vendor) => {
-        const area = vendor.vendor_stall_area || "UNASSIGNED AREA";
+    const groupedVendors = allVendors.reduce((acc, vendor) => {
+        const area = (vendor.vendor_stall_area || "UNASSIGNED AREA").toUpperCase();
         if (!acc[area]) acc[area] = [];
         acc[area].push(vendor);
         return acc;
@@ -88,126 +83,211 @@ function renderVendors(vendors) {
     for (const [area, areaVendors] of Object.entries(groupedVendors)) {
         const headerRow = document.createElement("tr");
         headerRow.className = "area-separator";
-        headerRow.innerHTML = `<td colspan="4"><i class="fa-solid fa-building"></i> ${escapeHtml(area)}</td>`;
+        headerRow.innerHTML = `<td colspan="5"><i class="fa-solid fa-building"></i> ${area}</td>`;
         tableBody.appendChild(headerRow);
 
         areaVendors.forEach(vendor => {
-            const taxAmount = taxRates[vendor.product_services] || taxRates.Default;
+            const taxRef = taxFeesLookup[vendor.product_services] || "0.00";
+            const isPaid = !!vendor.hasPaid;
+
             const row = document.createElement("tr");
+            row.id = `row-${vendor.vendor_id}`;
             row.innerHTML = `
-                <td><strong>${escapeHtml(vendor.vendor_name)}</strong></td>
-                <td><strong>${escapeHtml(vendor.product_services)}</strong></td>
-                <td class="attendance-cell">
-                    <input type="checkbox" class="custom-checkbox" data-id="${vendor.vendor_id}" data-field="isPresent" ${vendor.isPresent ? "checked" : ""}>
+                <td>
+                    <div style="font-weight: 700;">${vendor.vendor_name.toUpperCase()}</div>
+                    <div style="font-size: 11px; color: #7f8c8d;">ID: ${vendor.vendor_id}</div>
                 </td>
                 <td>
-                    <div class="tax-cell">
-                        <div class="tax-pill">₱${taxAmount}</div>
-                        <input type="checkbox" class="custom-checkbox" data-id="${vendor.vendor_id}" data-field="hasPaid" ${vendor.hasPaid ? "checked" : ""}>
+                    <div style="font-weight: 600;">${vendor.product_services}</div>
+                </td>
+                <td class="center-col">
+                    <input type="checkbox" class="attendance-checkbox" data-id="${vendor.vendor_id}" ${vendor.isPresent ? "checked" : ""}>
+                </td>
+                <td class="center-col">
+                    <input type="number" class="amt-input" id="amt-${vendor.vendor_id}"
+                           placeholder="${taxRef}"
+                           value="${vendor.paidAmount || ''}"
+                           oninput="window.validateRange('${vendor.vendor_id}', '${taxRef}')"
+                           ${isPaid ? 'disabled' : ''}>
+                </td>
+                <td class="center-col">
+                    <div id="action-container-${vendor.vendor_id}">
+                        ${isPaid ?
+                            `<button class="btn-edit-payment" onclick="window.unlockPayment('${vendor.vendor_id}')"><i class="fa-solid fa-ellipsis"></i></button>` :
+                            `<button class="btn-done" id="done-${vendor.vendor_id}" onclick="window.markAsPaid('${vendor.vendor_id}')">DONE PAYING</button>`
+                        }
                     </div>
                 </td>
             `;
             tableBody.appendChild(row);
         });
     }
-    attachCheckboxListeners();
+    attachAttendanceListeners();
 }
 
-async function updateRecord(id, field, value, checkboxElement) {
-    try {
-        const { error } = await supabase
-            .from('vendor_details')
-            .update({ [field]: value })
-            .eq('vendor_id', id);
+// --- RANGE VALIDATION ---
+window.validateRange = (vendorId, rangeStr) => {
+    const input = document.getElementById(`amt-${vendorId}`);
+    const btn = document.getElementById(`done-${vendorId}`);
+    if (!input) return;
+    const val = parseFloat(input.value);
 
-        if (error) throw error;
-    } catch (e) {
-        console.error("Update failed:", e);
-        if (checkboxElement) checkboxElement.checked = !value;
-    }
-}
+    const numbers = rangeStr.match(/\d+(\.\d+)?/g);
 
-function attachCheckboxListeners() {
-    document.querySelectorAll(".custom-checkbox").forEach((cb) => {
-        if (cb.dataset.listenerAttached) return;
-        cb.addEventListener("change", async (e) => {
-            await updateRecord(e.target.dataset.id, e.target.dataset.field, e.target.checked, e.target);
-        });
-        cb.dataset.listenerAttached = "true";
-    });
-}
-
-// --- TAX LIST MODAL (SUPABASE) ---
-
-const openBtn = document.getElementById('openTaxList');
-const closeBtn = document.getElementById('closeTaxList');
-const modal = document.getElementById('taxModalOverlay');
-
-if (openBtn) {
-    openBtn.addEventListener('click', () => {
-        document.body.classList.add('modal-active');
-        modal.style.display = 'flex';
-        loadCollectionFees();
-    });
-}
-
-
-if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-        document.body.classList.remove('modal-active');
-        modal.style.display = 'none';
-    });
-}
-
-async function loadCollectionFees() {
-    const tableBody = document.getElementById('tax-fee-list');
-    tableBody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:20px;'>Loading...</td></tr>";
-
-
-    const { data: fees, error } = await supabase
-        .from('collection_fees')
-        .select('*')
-        .order('area', { ascending: true });
-
-    if (error) {
-        tableBody.innerHTML = "<tr><td colspan='3'>Error: " + error.message + "</td></tr>";
+    if (!numbers || isNaN(val)) {
+        input.style.border = "1.5px solid #ddd";
+        if (btn) btn.disabled = false;
         return;
     }
 
-    tableBody.innerHTML = "";
-    let lastArea = "";
-    fees.forEach(fee => {
-        if (fee.area !== lastArea) {
-            lastArea = fee.area;
-            const sep = document.createElement('tr');
-            sep.className = "area-separator";
-            sep.innerHTML = `<td colspan="3"><i class="fa-solid fa-location-dot"></i> ${fee.area.toUpperCase()}</td>`;
-            tableBody.appendChild(sep);
-        }
+    const min = parseFloat(numbers[0]);
+    const max = numbers[1] ? parseFloat(numbers[1]) : min;
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td style="padding-left: 25px;">${fee.product_services}</td>
-            <td style="font-weight: bold; color: #2971b9;">${fee.amount_range}</td>
-            <td class="center-col">${fee['quantified?'] === 'true' || fee['quantified?'] === true ? '<i class="fa-solid fa-circle-check" style="color:#27ae60"></i>' : '-'}</td>
-        `;
-        tableBody.appendChild(row);
+    if (val < min || val > max) {
+        input.style.border = "2.5px solid #e74c3c";
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+        }
+    } else {
+        input.style.border = "2.5px solid #27ae60";
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = "1";
+        }
+    }
+};
+
+function attachAttendanceListeners() {
+    document.querySelectorAll(".attendance-checkbox").forEach(cb => {
+        cb.onchange = async (e) => {
+            const id = e.target.dataset.id;
+            const checked = e.target.checked;
+            await supabase.from('vendor_details').update({ isPresent: checked }).eq('vendor_id', id);
+        };
     });
 }
 
-// Search Functionality
-const searchInput = document.getElementById('vendorSearch');
-if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('#vendor-list tr:not(.area-separator)');
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
+window.markAsPaid = async (vendorId) => {
+    const amtInput = document.getElementById(`amt-${vendorId}`);
+    const paidAmount = parseFloat(amtInput.value) || 0;
+
+    if (paidAmount <= 0) {
+        showNotification("Please enter a valid amount", "error");
+        return;
+    }
+
+    amtInput.disabled = true;
+    amtInput.style.border = "1.5px solid #bdc3c7";
+    const container = document.getElementById(`action-container-${vendorId}`);
+    container.innerHTML = `<button class="btn-edit-payment" onclick="window.unlockPayment('${vendorId}')"><i class="fa-solid fa-ellipsis"></i></button>`;
+
+    await supabase.from('vendor_details').update({
+        hasPaid: true,
+        paidAmount: paidAmount
+    }).eq('vendor_id', vendorId);
+
+    showNotification("Payment recorded locally");
+};
+
+window.unlockPayment = async (vendorId) => {
+    const amtInput = document.getElementById(`amt-${vendorId}`);
+    amtInput.disabled = false;
+
+    const container = document.getElementById(`action-container-${vendorId}`);
+    container.innerHTML = `<button class="btn-done" id="done-${vendorId}" onclick="window.markAsPaid('${vendorId}')">DONE PAYING</button>`;
+
+    await supabase.from('vendor_details').update({ hasPaid: false }).eq('vendor_id', vendorId);
+
+    const vendor = allVendors.find(v => String(v.vendor_id) === String(vendorId));
+    window.validateRange(vendorId, taxFeesLookup[vendor.product_services] || "0.00");
+};
+
+// --- FINISH & UPLOAD LOGIC ---
+window.finishAndUpload = async () => {
+    const { data: vendors, error } = await supabase.from('vendor_details').select('*');
+    if (error) return;
+
+    const unpaidVendors = vendors.filter(v => !v.hasPaid);
+
+    if (unpaidVendors.length > 0) {
+        document.getElementById('confirmMessage').textContent = `${unpaidVendors.length} vendors haven't paid yet.`;
+        document.getElementById('confirmModalOverlay').style.display = 'flex';
+    } else {
+        await executeUpload(vendors);
+    }
+};
+
+window.confirmUpload = async (proceed) => {
+    document.getElementById('confirmModalOverlay').style.display = 'none';
+    if (proceed) {
+        const { data: vendors } = await supabase.from('vendor_details').select('*');
+        await executeUpload(vendors);
+    }
+};
+
+async function executeUpload(vendors) {
+    showNotification("Uploading to Firebase...", "info");
+    let count = 0;
+    for (const v of vendors) {
+        const firebaseData = {
+            vendor_id: String(v.vendor_id),
+            vendor_name: v.vendor_name,
+            stall_area: v.vendor_stall_area || "N/A",
+            product_services: v.product_services,
+            is_present: !!v.isPresent,
+            has_paid: !!v.hasPaid,
+            amount_paid: parseFloat(v.paidAmount) || 0,
+            tax_reference: taxFeesLookup[v.product_services] || "N/A",
+            timestamp: serverTimestamp()
+        };
+        await setDoc(doc(db, "vendor_realtime", String(v.vendor_id)), firebaseData, { merge: true });
+        count++;
+    }
+    showNotification(`Success! ${count} records uploaded.`, "success");
+}
+
+// --- MODAL LOGIC ---
+window.openTaxList = () => {
+    document.getElementById('taxModalOverlay').style.display = 'flex';
+    loadModalFees();
+};
+
+window.closeTaxList = () => {
+    document.getElementById('taxModalOverlay').style.display = 'none';
+};
+
+async function loadModalFees() {
+    const body = document.getElementById('tax-fee-list');
+    body.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Loading...</td></tr>";
+    const { data } = await supabase.from('collection_fees').select('*').order('area', { ascending: true });
+    if (!data) return;
+    body.innerHTML = "";
+    data.forEach(f => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${f.product_services}</td><td style="font-weight:700;">${f.amount_range}</td><td class="center-col">${f['quantified?'] ? '✅' : '-'}</td>`;
+        body.appendChild(tr);
+    });
+}
+
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notificationsContainer');
+    if (!container) return;
+    const notif = document.createElement('div');
+    notif.className = `notification ${type}`;
+    notif.textContent = message;
+    container.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+
+const vendorSearch = document.getElementById('vendorSearch');
+if (vendorSearch) {
+    vendorSearch.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('#vendor-list tr:not(.area-separator)').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
         });
     });
 }
 
-
-// Initialize
-fetchVendors();
+init();

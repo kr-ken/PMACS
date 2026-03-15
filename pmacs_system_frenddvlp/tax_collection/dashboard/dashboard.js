@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import {
     getFirestore,
     collection,
-    getDocs,
+    onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // Firebase configuration
@@ -19,92 +19,101 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const vendorsCollection = collection(db, "vendors");
+const realtimeCollection = collection(db, "vendor_realtime");
 
-// Tax rate table
-const taxRates = {
-    Meat: 35,
-    Vegetables: 25,
-    Fish: 25,
-    "Dry Goods": 15,
-    Default: 0,
-};
-
+// --- UI LOGIC: DATE ---
 const options = { year: "numeric", month: "long", day: "numeric" };
 const dateElement = document.getElementById("currentDate");
-
 if (dateElement) {
     dateElement.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
 }
 
-
-function escapeHtml(text) {
-    if (!text) return "";
-    const div = document.createElement("div");
-    div.textContent = String(text).toUpperCase();
-    return div.innerHTML;
-}
-// Update dashboard stats with pie charts
-async function updateDashboardStats() {
-    const snapshot = await getDocs(vendorsCollection);
-    
+// Real-time listener for the dashboard
+onSnapshot(realtimeCollection, (snapshot) => {
     let totalCollected = 0;
-    let totalPending = 0;
+    let totalToCollect = 0;
     let paidCount = 0;
     let unpaidCount = 0;
     let presentCount = 0;
     let absentCount = 0;
+    let totalAbsentDues = 0;
+
     const totalVendors = snapshot.docs.length;
 
     snapshot.docs.forEach(doc => {
         const data = doc.data();
-        const price = taxRates[data.stallType] || taxRates.Default;
-        
-        // Tax collection calculations
-        if (data.hasPaid) {
-            totalCollected += price;
-            paidCount++;
-        } else {
-            totalPending += price;
-            unpaidCount++;
-        }
-        
-        // Attendance calculations
-        if (data.isPresent) {
+
+        // 1. Attendance stats
+        if (data.is_present) {
             presentCount++;
         } else {
             absentCount++;
+            // Automatically compute dues for absent vendors based on tax_reference
+            const refPrice = parseRefPrice(data.tax_reference);
+            totalAbsentDues += refPrice;
+        }
+
+        // 2. Collection stats
+        if (data.has_paid) {
+            totalCollected += parseFloat(data.amount_paid) || 0;
+            paidCount++;
+        } else {
+            // "To be collected" are those who are present but haven't paid
+            if (data.is_present) {
+                totalToCollect += parseRefPrice(data.tax_reference);
+                unpaidCount++;
+            }
         }
     });
 
-    // Update Total Collected row
-    document.getElementById('stat-total-money').textContent = `P${totalCollected}`;
-    document.getElementById('legend-paid').textContent = `P${totalCollected}`;
-    document.getElementById('legend-unpaid').textContent = `P${totalPending}`;
+    updateUI(totalCollected, totalToCollect, paidCount, unpaidCount, presentCount, absentCount, totalAbsentDues, totalVendors);
+});
+
+// Helper to extract a single numeric value from strings like "P4.75 to P20" (takes the minimum/average or specific logic)
+function parseRefPrice(rangeStr) {
+    if (!rangeStr || rangeStr === "N/A") return 0;
+    const numbers = rangeStr.match(/\d+(\.\d+)?/g);
+    if (!numbers) return 0;
+    // For dues logic, we take the first number (minimum) as the reference
+    return parseFloat(numbers[0]);
+}
+
+function updateUI(totalCollected, totalToCollect, paidCount, unpaidCount, presentCount, absentCount, totalAbsentDues, totalVendors) {
+    // Update Revenue Card
+    document.getElementById('stat-total-money').textContent = `₱${totalCollected.toFixed(2)}`;
+    document.getElementById('legend-paid').textContent = `₱${totalCollected.toFixed(2)}`;
+    document.getElementById('legend-unpaid').textContent = `₱${totalToCollect.toFixed(2)}`;
     
-    // Update pie chart for collected
-    const totalTax = totalCollected + totalPending;
-    const collectedPercent = totalTax > 0 ? (totalCollected / totalTax) * 100 : 0;
+    // Update pie chart for collected vs to-collect
+    const totalPotential = totalCollected + totalToCollect;
+    const collectedPercent = totalPotential > 0 ? (totalCollected / totalPotential) * 100 : 0;
     const pieCollected = document.getElementById('pie-collected');
-    const circumference = 2 * Math.PI * 40; // r=40
-    pieCollected.style.strokeDasharray = `${(collectedPercent / 100) * circumference} ${circumference}`;
-    pieCollected.style.strokeDashoffset = '0';
+    const circumference = 2 * Math.PI * 40;
+    if (pieCollected) {
+        pieCollected.style.strokeDasharray = `${(collectedPercent / 100) * circumference} ${circumference}`;
+    }
 
-    // Update Pending Tax row
-    document.getElementById('stat-pending').textContent = unpaidCount;
-    document.getElementById('stat-collected').textContent = paidCount;
+    // Update Collected/Pending Count
+    const statPending = document.getElementById('stat-pending');
+    if (statPending) statPending.textContent = unpaidCount;
 
-    // Update Attendance Rate row
+    const statCollected = document.getElementById('stat-collected');
+    if (statCollected) statCollected.textContent = paidCount;
+
+    // Update Attendance Card
     const attendancePercent = totalVendors > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
-    document.getElementById('stat-attendance').textContent = `${attendancePercent}%`;
-    document.getElementById('legend-present').textContent = presentCount;
-    document.getElementById('legend-absent').textContent = absentCount;
+    const statAttendance = document.getElementById('stat-attendance');
+    if (statAttendance) statAttendance.textContent = `${attendancePercent}%`;
+
+    const legendPresent = document.getElementById('legend-present');
+    if (legendPresent) legendPresent.textContent = presentCount;
+
+    const legendAbsent = document.getElementById('legend-absent');
+    if (legendAbsent) legendAbsent.textContent = `${absentCount} (₱${totalAbsentDues.toFixed(2)} Dues)`;
     
     // Update pie chart for attendance
     const pieAttendance = document.getElementById('pie-attendance');
-    pieAttendance.style.strokeDasharray = `${(attendancePercent / 100) * circumference} ${circumference}`;
-    pieAttendance.style.strokeDashoffset = '0';
+    if (pieAttendance) {
+        pieAttendance.style.strokeDasharray = `${(attendancePercent / 100) * circumference} ${circumference}`;
+    }
 }
-
-// Initial load
-updateDashboardStats();
