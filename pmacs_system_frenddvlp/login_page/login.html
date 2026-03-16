@@ -1,20 +1,87 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Login Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMACS - Login</title>
     <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-     
-    <div class="login-container">
-        <h1>Login</h1>
-        <form id="login-form">
-            <form name="login" onsubmit="return validateForm() ;" method="post">
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        <p>Don't have an account? <a href="mailto:">Contact Admin</a></p>
+
+<div class="login-bg">
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+</div>
+
+<main class="login-wrapper">
+
+    <!-- Left panel: branding -->
+    <div class="brand-panel">
+        <div class="brand-content">
+            <div class="brand-logo">
+                <img src="pmacs_system_frenddvlp/images/pmacs_logo_bw.png" alt="PMACS Logo" onerror="this.style.display='none'">
+            </div>
+            <h1 class="brand-title">PMACS</h1>
+            <p class="brand-sub">Public Market Administration<br>Collection System</p>
+            <div class="brand-divider"></div>
+            <ul class="brand-features">
+                <li><i class="fa-solid fa-check-circle"></i> Real-time tax collection tracking</li>
+                <li><i class="fa-solid fa-check-circle"></i> Vendor attendance management</li>
+                <li><i class="fa-solid fa-check-circle"></i> Live dashboard & analytics</li>
+            </ul>
+        </div>
     </div>
 
-    <script src="login.js"></script>
+    <!-- Right panel: login form -->
+    <div class="form-panel">
+        <div class="form-card">
+            <div class="form-header">
+                <h2>SIGN IN</h2>
+                <p>Enter your credentials to continue</p>
+            </div>
+
+            <div id="errorMessage" class="error-banner" style="display:none;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span id="errorText">Invalid email or password.</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">USERNAME</label>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-envelope input-icon"></i>
+                    <input type="text" id="email" placeholder="Enter your username" autocomplete="email">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">PASSWORD</label>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+                    <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password">
+                        <i class="fa-solid fa-eye" id="toggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn-login" id="btnLogin">
+                <span id="btnText">SIGN IN</span>
+                <i class="fa-solid fa-arrow-right-to-bracket" id="btnIcon"></i>
+                <span class="btn-spinner" id="btnSpinner" style="display:none;">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    </span>
+            </button>
+
+            <p class="form-footer">
+                Contact your administrator if you need access.
+            </p>
+        </div>
+    </div>
+
+</main>
+
+<script type="module" src="login.js"></script>
 </body>
 </html>

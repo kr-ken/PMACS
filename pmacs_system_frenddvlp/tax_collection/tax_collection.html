@@ -9,115 +9,126 @@
 </head>
 <body>
 
+<header class="top-nav">
+    <div class="nav-top-row">
+        <div class="logo-area">
+            <div class="logo-icon"><img src="../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
+            <h2>PMACS</h2>
+        </div>
+        <div class="top-links">
+            <!-- Collector name shown here once logged in -->
+            <span id="collectorName" style="color:rgba(255,255,255,0.85); font-size:13px; font-weight:600; padding:8px 15px;">
+                    <i class="fa-solid fa-user-tie" style="margin-right:6px;"></i>Loading...
+                </span>
+            <a href="#">SETTINGS</a>
+            <a href="#" onclick="window.handleLogout()">LOGOUT</a>
+        </div>
+    </div>
 
-    <header class="top-nav">
-        <div class="nav-top-row">
-            <div class="logo-area">
-                <div class="logo-icon"><img src="../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
-                <h2>PMACS</h2>
-            </div>
-            <div class="top-links">
-                <a href="#">SETTINGS</a>
-                <a href="#">LOGOUT</a>
+    <nav class="main-menu">
+        <a href="tax_collection.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
+        <a href="dashboard/dashboard.html" class="menu-item">DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
+        <a href="notifications/notifications.html" class="menu-item">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
+    </nav>
+</header>
+
+<main class="main-content">
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-area">
+                <h1>VENDOR TAX COLLECTION</h1>
+                <p>RECORDS TAX AND ATTENDANCE OF VENDORS</p>
+                <h2 class="date-display" id="currentDate">LOADING DATE...</h2>
             </div>
         </div>
-       
-        <nav class="main-menu">
-            <a href="tax_collection.html" class="menu-item active">VENDOR <i class="fa-solid fa-address-card"></i></a>
-            <a href="dashboard/dashboard.html" class="menu-item">DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
-            <a href="notifications/notifications.html" class="menu-item">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
-        </nav>
-    </header>
-
-
-    <main class="main-content">
-        <div class="page-header">
-            <div class="header-left">
-                <div class="title-area">
-                    <h1>VENDOR TAX COLLECTION</h1>
-                    <p>RECORDS TAX AND ATTENDANCE OF VENDORS</p>
-                    <h2 class="date-display" id="currentDate">LOADING DATE...</h2>
-                </div>
-            </div>
-            <div class="header-right">
-                <button id="openTaxList" class="tax-list-trigger" onclick="window.openTaxList()">
-                    <i class="fa-solid fa-file-invoice-dollar"></i> TAX LIST
-                </button>
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <label for="vendorSearch"></label><input type="text" id="vendorSearch" class="search-input" placeholder="Search vendors...">
-                </div>
+        <div class="header-right">
+            <button id="openTaxList" class="tax-list-trigger" onclick="window.openTaxList()">
+                <i class="fa-solid fa-file-invoice-dollar"></i> TAX LIST
+            </button>
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <label for="vendorSearch"></label>
+                <input type="text" id="vendorSearch" class="search-input" placeholder="Search vendors...">
             </div>
         </div>
+    </div>
 
+    <div class="table-container">
+        <table id="taxTable">
+            <thead>
+            <tr>
+                <th>VENDOR NAME</th>
+                <th>STALL TYPE</th>
+                <th class="center-col">ATTENDANCE</th>
+                <th class="center-col">TAX</th>
+                <th class="center-col">ACTION</th>
+            </tr>
+            </thead>
+            <tbody id="vendor-list"></tbody>
+        </table>
+    </div>
+</main>
 
-        <div class="table-container">
-            <table id="taxTable">
+<!-- Tax List Modal -->
+<div id="taxModalOverlay" class="modal-overlay">
+    <div class="tax-modal-content">
+        <div class="modal-header">
+            <h2>OFFICIAL COLLECTION FEES</h2>
+            <button id="closeTaxList" class="close-btn" onclick="window.closeTaxList()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <table class="modal-table">
                 <thead>
-                    <tr>
-                        <th>VENDOR NAME</th>
-                        <th>STALL TYPE</th>
-                        <th class="center-col">ATTENDANCE</th>
-                        <th class="center-col">TAX</th>
-                        <th class="center-col">ACTION</th>
-                    </tr>
+                <tr>
+                    <th>PRODUCT / SERVICE</th>
+                    <th>AMOUNT RANGE</th>
+                    <th class="center-col">QUANTIFIED?</th>
+                </tr>
                 </thead>
-                <tbody id="vendor-list">
-                    </tbody>
+                <tbody id="tax-fee-list"></tbody>
             </table>
         </div>
-    </main>
+    </div>
+</div>
 
-
-    <div id="taxModalOverlay" class="modal-overlay">
-        <div class="tax-modal-content">
-            <div class="modal-header">
-                <h2>OFFICIAL COLLECTION FEES</h2>
-                <button id="closeTaxList" class="close-btn" onclick="window.closeTaxList()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <table class="modal-table">
-                    <thead>
-                        <tr>
-                            <th>PRODUCT / SERVICE</th>
-                            <th>AMOUNT RANGE</th>
-                            <th class="center-col">QUANTIFIED?</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tax-fee-list">
-                        </tbody>
-                </table>
+<!-- Confirmation Modal -->
+<div id="confirmModalOverlay" class="modal-overlay">
+    <div class="tax-modal-content" style="max-width:450px; text-align:center;">
+        <div class="modal-header" style="justify-content:center; background:var(--warning-color);">
+            <h2>UPLOAD WARNING</h2>
+        </div>
+        <div class="modal-body" style="padding:30px;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size:48px; color:var(--warning-color); margin-bottom:15px;"></i>
+            <p id="confirmMessage" style="font-weight:600; font-size:16px;"></p>
+            <p style="color:#7f8c8d; margin-top:10px;">Do you want to proceed with the upload?</p>
+            <div style="display:flex; gap:15px; margin-top:25px; justify-content:center;">
+                <button class="btn-done" style="background:var(--primary-color);" onclick="window.confirmUpload(true)">PROCEED</button>
+                <button class="btn-done" style="background:#95a5a6;" onclick="window.confirmUpload(false)">CANCEL</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Confirmation Modal -->
-    <div id="confirmModalOverlay" class="modal-overlay">
-        <div class="tax-modal-content" style="max-width: 450px; text-align: center;">
-            <div class="modal-header" style="justify-content: center; background: var(--warning-color);">
-                <h2>UPLOAD WARNING</h2>
-            </div>
-            <div class="modal-body" style="padding: 30px;">
-                <i class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: var(--warning-color); margin-bottom: 15px;"></i>
-                <p id="confirmMessage" style="font-weight: 600; font-size: 16px;"></p>
-                <p style="color: #7f8c8d; margin-top: 10px;">Do you want to proceed with the upload?</p>
-                <div style="display: flex; gap: 15px; margin-top: 25px; justify-content: center;">
-                    <button class="btn-done" style="background: var(--primary-color);" onclick="window.confirmUpload(true)">PROCEED</button>
-                    <button class="btn-done" style="background: #95a5a6;" onclick="window.confirmUpload(false)">CANCEL</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="sticky-footer">
+    <button id="btnFinishCollection" class="btn-finish" onclick="window.finishAndUpload()">
+        <i class="fa-solid fa-cloud-arrow-up"></i> FINISH & UPLOAD
+    </button>
+</div>
 
-    <div class="sticky-footer">
-        <button id="btnFinishCollection" class="btn-finish" onclick="window.finishAndUpload()">
-            <i class="fa-solid fa-cloud-arrow-up"></i> FINISH & UPLOAD
-        </button>
-    </div>
+<!-- Toast notifications (top-right, this page only) -->
+<div id="notificationsContainer" class="notifications-container"></div>
 
-    <!-- Notifications Container -->
-    <div id="notificationsContainer" class="notifications-container"></div>
-
-    <script type="module" src="tax_collection.js"></script>
+<script type="module" src="tax_collection.js"></script>
+<script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabase = createClient(
+        'https://kbrwqixrbxlmopyxbrnj.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA'
+    );
+    window.handleLogout = async () => {
+        await supabase.auth.signOut();
+        window.location.href = "../login/login.html";
+    };
+</script>
 </body>
 </html>

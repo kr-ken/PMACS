@@ -5,15 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5e603f5d-5621-4ecd-aabe-ab2efe4cb72d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/report_page/report.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.js" afterDir="false" />
@@ -52,23 +52,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Administrator/Downloads/PMACS&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;templates.modelproviders.configurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Administrator/Downloads/PMACS",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "com.android.studio.ml.templates"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Administrator\Downloads\PMACS\report_page" />
