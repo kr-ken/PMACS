@@ -17,7 +17,7 @@
     </div>
     <div class="top-links">
       <a href="#">SETTINGS</a>
-      <a href="#">LOGOUT</a>
+      <a href="#" onclick="window.handleLogout()">LOGOUT</a>
     </div>
   </div>
   <nav class="main-menu">
@@ -50,5 +50,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script src="../transitions/page-transitions.js" defer></script>
 <script type="module" src="notifications.js"></script>
+<script>
+    window.handleLogout = () => {
+        sessionStorage.clear();
+        window.location.href = "../../login_page/login.html";
+    };
+</script>
 </body>
 </html>

@@ -9,7 +9,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyA0zUwFQHAG0jMLGoTwKHzntCoyksX4dnw",
     authDomain: "pmacs-0001.firebaseapp.com",
     projectId: "pmacs-0001",
-    databaseURL: "https://pmacs-0001-default-rtdb.firebaseio.com", // ← verify in Firebase Console
+    databaseURL: "https://pmacs-0001-default-rtdb.asia-southeast1.firebasedatabase.app", // ← verify in Firebase Console
     storageBucket: "pmacs-0001.firebasestorage.app",
     messagingSenderId: "73881840540",
     appId: "1:73881840540:web:d8194aec335cbfcf527659",
@@ -32,7 +32,7 @@ const today = new Date().toISOString().split('T')[0];
 // --- INIT ---
 async function init() {
     updateDateDisplay();
-    requireAuth(); // redirect immediately if not logged in
+    // requireAuth(); // re-enable after testing
 
     // Run independent fetches in parallel
     await Promise.all([
@@ -123,7 +123,7 @@ async function fetchVendors() {
 
     const { data: vendors, error } = await supabase
         .from('vendor_details')
-        .select('vendor_id, vendor_name, vendor_stall_area, vendor_stall_number, product_services')
+        .select('vendor_id, vendor_name, vendor_stall_area, product_services')
         .order('vendor_stall_area', { ascending: true });
 
     if (error) {
@@ -219,7 +219,6 @@ async function upsertPaymentToSupabase(vendor, paidAmount) {
             vendor_id:          vendor.vendor_id,
             vendor_name:        vendor.vendor_name,
             vendor_stall_name:  vendor.vendor_stall_area || "N/A",
-            vendor_stall_number: vendor.vendor_stall_number || 0,
             area:               vendor.vendor_stall_area || "N/A",
             officials_id:       currentOfficial.officials_id,
             officials_name:     currentOfficial.officials_name,

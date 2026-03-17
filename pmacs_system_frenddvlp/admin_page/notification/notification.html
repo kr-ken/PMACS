@@ -17,7 +17,7 @@
             </div>
             <div class="top-links">
                 <a href="#">SETTINGS</a>
-                <a href="#">LOGOUT</a>
+                <a href="#" onclick="window.handleLogout()">LOGOUT</a>
             </div>
         </div>
 
@@ -50,5 +50,11 @@
     </main>
 
     <script type="module" src="notification.js"></script>
+<script>
+    window.handleLogout = () => {
+        sessionStorage.clear();
+        window.location.href = "../../login_page/login.html";
+    };
+</script>
 </body>
 </html>

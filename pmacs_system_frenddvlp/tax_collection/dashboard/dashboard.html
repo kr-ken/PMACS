@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../tax_collection.css">
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -17,11 +18,13 @@
             <h2>PMACS</h2>
         </div>
         <div class="top-links">
+            <span id="collectorName" style="color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;padding:8px 15px;">
+                <i class="fa-solid fa-user-tie" style="margin-right:6px;"></i>
+            </span>
             <a href="#">SETTINGS</a>
-            <a href="#">LOGOUT</a>
+            <a href="#" onclick="window.handleLogout()">LOGOUT</a>
         </div>
     </div>
-
     <nav class="main-menu">
         <a href="../tax_collection.html" class="menu-item">VENDOR <i class="fa-solid fa-address-card"></i></a>
         <a href="dashboard.html" class="menu-item active" data-no-transition>DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
@@ -38,104 +41,123 @@
         </div>
     </div>
 
-    <!-- Row 1: Total Collected -->
+    <!-- ── Row 1: Insight cards ── -->
     <div class="stats-row">
-        <div class="stat-card full-width">
-            <div class="stat-header">
-                <div class="stat-icon money">
-                    <i class="fa-solid fa-peso-sign"></i>
+        <!-- Total Collected -->
+        <div class="stat-card insight-card">
+            <div class="insight-label">TOTAL COLLECTED</div>
+            <div class="insight-value green" id="stat-total-money">₱0.00</div>
+            <div class="insight-sub">
+                <span class="dot green"></span> Paid: <strong id="legend-paid">₱0.00</strong>
+                &nbsp;&nbsp;
+                <span class="dot red"></span> Unpaid: <strong id="legend-unpaid">₱0.00</strong>
+            </div>
+        </div>
+
+        <!-- Vendors Paid vs Unpaid -->
+        <div class="stat-card insight-card">
+            <div class="insight-label">VENDORS TODAY</div>
+            <div class="insight-row">
+                <div class="insight-half">
+                    <div class="insight-value green" id="card-paid-count">0</div>
+                    <div class="insight-sub">Paid</div>
                 </div>
-                <div class="stat-label">TOTAL COLLECTED</div>
+                <div class="insight-divider"></div>
+                <div class="insight-half">
+                    <div class="insight-value red" id="card-unpaid-count">0</div>
+                    <div class="insight-sub">Unpaid</div>
+                </div>
+            </div>
+            <!-- Mini progress bar -->
+            <div class="mini-bar-track">
+                <div class="mini-bar green" id="bar-paid"></div>
+                <div class="mini-bar red"   id="bar-unpaid"></div>
+            </div>
+        </div>
+
+        <!-- Attendance -->
+        <div class="stat-card insight-card">
+            <div class="insight-label">ATTENDANCE RATE</div>
+            <div class="insight-value blue" id="stat-attendance">0%</div>
+            <div class="insight-sub">
+                <span class="dot blue"></span> Present: <strong id="legend-present">0</strong>
+                &nbsp;&nbsp;
+                <span class="dot gray"></span> Absent: <strong id="legend-absent">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Row 2: Collection chart ── -->
+    <div class="stat-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="stat-label">COLLECTION TREND</div>
+                <div class="chart-sub">Total tax collected over time</div>
+            </div>
+            <div class="tab-group">
+                <button class="tab-btn active" data-tab="daily"   onclick="window.switchTab('daily')">Daily</button>
+                <button class="tab-btn"        data-tab="weekly"  onclick="window.switchTab('weekly')">Weekly</button>
+                <button class="tab-btn"        data-tab="monthly" onclick="window.switchTab('monthly')">Monthly</button>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="collectionChart"></canvas>
+            <div id="chartEmpty" class="chart-empty" style="display:none;">
+                <i class="fa-solid fa-chart-line"></i>
+                <p>No collection data yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Row 3: Pie charts ── -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon money"><i class="fa-solid fa-peso-sign"></i></div>
+                <div class="stat-label">COLLECTION RATE</div>
             </div>
             <div class="stat-content">
                 <div class="pie-chart-container">
                     <svg class="pie-chart" viewBox="0 0 100 100">
                         <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
-                        <!-- stroke-dasharray initialized to 0 so pie starts empty -->
-                        <circle class="pie-paid" cx="50" cy="50" r="40"
-                                id="pie-collected"
-                                style="stroke-dasharray: 0 251.33;"></circle>
+                        <circle class="pie-paid" cx="50" cy="50" r="40" id="pie-collected" style="stroke-dasharray:0 251.33;"></circle>
                     </svg>
                     <div class="pie-center">
-                        <span class="pie-value" id="stat-total-money">₱0.00</span>
+                        <span class="pie-value" id="stat-total-money-pie">—</span>
                     </div>
                 </div>
                 <div class="pie-legend">
-                    <div class="legend-item">
-                        <span class="legend-color paid"></span>
-                        <span class="legend-text">Paid: <strong id="legend-paid">₱0.00</strong></span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color pending"></span>
-                        <span class="legend-text">Unpaid: <strong id="legend-unpaid">₱0.00</strong></span>
-                    </div>
+                    <div class="legend-item"><span class="legend-color paid"></span><span class="legend-text">Collected</span></div>
+                    <div class="legend-item"><span class="legend-color pending"></span><span class="legend-text">Pending</span></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Row 2: Pending Tax with Collected -->
-    <div class="stats-row">
         <div class="stat-card">
             <div class="stat-header">
-                <div class="stat-icon pending">
-                    <i class="fa-solid fa-clock"></i>
-                </div>
-                <div class="stat-label">PENDING TAX</div>
-            </div>
-            <div class="stat-value" id="stat-pending">0</div>
-            <div class="stat-subtitle">Vendors yet to pay</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-icon collected">
-                    <i class="fa-solid fa-check-circle"></i>
-                </div>
-                <div class="stat-label">COLLECTED</div>
-            </div>
-            <div class="stat-value" id="stat-collected">0</div>
-            <div class="stat-subtitle">Vendors paid today</div>
-        </div>
-    </div>
-
-    <!-- Row 3: Attendance Rate -->
-    <div class="stats-row">
-        <div class="stat-card full-width">
-            <div class="stat-header">
-                <div class="stat-icon attendance">
-                    <i class="fa-solid fa-users"></i>
-                </div>
-                <div class="stat-label">ATTENDANCE RATE</div>
+                <div class="stat-icon attendance"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-label">ATTENDANCE</div>
             </div>
             <div class="stat-content">
                 <div class="pie-chart-container">
                     <svg class="pie-chart" viewBox="0 0 100 100">
                         <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
-                        <!-- stroke-dasharray initialized to 0 so pie starts empty -->
-                        <circle class="pie-present" cx="50" cy="50" r="40"
-                                id="pie-attendance"
-                                style="stroke-dasharray: 0 251.33;"></circle>
+                        <circle class="pie-present" cx="50" cy="50" r="40" id="pie-attendance" style="stroke-dasharray:0 251.33;"></circle>
                     </svg>
                     <div class="pie-center">
-                        <span class="pie-value" id="stat-attendance">0%</span>
+                        <span class="pie-value" id="stat-attendance-pie">—</span>
                     </div>
                 </div>
                 <div class="pie-legend">
-                    <div class="legend-item">
-                        <span class="legend-color present"></span>
-                        <span class="legend-text">Present: <strong id="legend-present">0</strong></span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color absent"></span>
-                        <span class="legend-text">Absent: <strong id="legend-absent">0</strong></span>
-                    </div>
+                    <div class="legend-item"><span class="legend-color present"></span><span class="legend-text">Present: <strong id="legend-present-pie">0</strong></span></div>
+                    <div class="legend-item"><span class="legend-color absent"></span><span class="legend-text">Absent: <strong id="legend-absent-pie">0</strong></span></div>
                 </div>
             </div>
         </div>
     </div>
+
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script type="module" src="dashboard.js"></script>
 </body>
 </html>

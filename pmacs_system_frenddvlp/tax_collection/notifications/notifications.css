@@ -1,50 +1,230 @@
-/* ============================================
-   PMACS MOBILE RESPONSIVE — notifications.css
-   Already included in notifications.css,
-   but add these extra rules for better mobile UX
-   ============================================ */
+/* Notifications Page Styles */
 
+/* ── Override tax_collection.css .notifications-container (fixed top-right toast) ── */
+.notifications-container {
+    position: static !important;
+    top: unset !important;
+    right: unset !important;
+    z-index: unset !important;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* ── Notification List ── */
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.notification-item {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 15px;
+    background: white !important;
+    padding: 20px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+    color: var(--dark-text) !important;
+    font-weight: normal !important;
+    margin-bottom: 0 !important;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.notification-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.notification-item.unread {
+    border-left: 4px solid #217dda !important;
+    background: #f0f7ff !important;
+}
+
+.notification-item.read {
+    border-left: 4px solid transparent !important;
+    background: white !important;
+    opacity: 0.8;
+}
+
+.unread-dot {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
+    background: #217dda;
+    border-radius: 50%;
+}
+
+.notification-icon {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #217dda, #4d93da);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-icon i { color: #fff; font-size: 18px; }
+
+.notification-content { flex: 1; }
+
+.notification-content h4 {
+    font-size: 16px;
+    color: var(--dark-text);
+    margin-bottom: 5px;
+}
+
+.notification-content p {
+    font-size: 14px;
+    color: #7f8c8d;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.notification-time { font-size: 12px; color: #95a5a6; }
+
+/* ── Empty State ── */
+.empty-notifications {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+}
+
+.empty-notifications i { font-size: 48px; margin-bottom: 20px; opacity: 0.5; }
+.empty-notifications p { font-size: 16px; }
+
+/* ── Mark All Read Button ── */
+.notifications-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.mark-all-read-btn {
+    background: transparent;
+    border: 2px solid var(--secondary-color);
+    color: var(--secondary-color);
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.mark-all-read-btn:hover {
+    background: var(--secondary-color);
+    color: white;
+}
+
+/* ── Bottom-left Banner ── */
+.banner-container {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.notification-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #fff;
+    border-left: 4px solid #217dda;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+    padding: 14px 16px;
+    min-width: 300px;
+    max-width: 360px;
+    pointer-events: all;
+    opacity: 0;
+    transform: translateX(-30px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.notification-banner.banner-visible  { opacity: 1; transform: translateX(0); }
+.notification-banner.banner-hiding   { opacity: 0; transform: translateX(-30px); }
+
+.banner-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #217dda, #4d93da);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.banner-icon i { color: #fff; font-size: 15px; }
+
+.banner-body { flex: 1; min-width: 0; }
+
+.banner-body strong {
+    display: block;
+    font-size: 14px;
+    color: #1a1a2e;
+    margin-bottom: 3px;
+}
+
+.banner-body p {
+    font-size: 12px;
+    color: #7f8c8d;
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.banner-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+
+.banner-close:hover { color: #555; }
+
+/* ── Mobile ── */
 @media (max-width: 768px) {
     .main-content { padding: 16px 12px 40px; }
-
-    .notifications-container {
-        padding: 0 !important;
-    }
-
-    .notifications-actions {
-        margin-bottom: 14px;
-    }
-
     .mark-all-read-btn {
-        width: 100%;
-        text-align: center;
-        padding: 10px;
+        width: auto;
+        font-size: 11px;
+        padding: 6px 14px;
+        margin-right: 8px;
     }
-
-    .notification-item {
-        padding: 14px !important;
-        gap: 12px;
-    }
-
-    .notification-icon {
-        width: 38px !important;
-        height: 38px !important;
-        flex-shrink: 0;
-    }
-
+    .notification-item { padding: 14px !important; gap: 12px; }
+    .notification-icon { width: 38px !important; height: 38px !important; }
     .notification-content h4 { font-size: 14px; }
     .notification-content p  { font-size: 13px; }
+
+    .banner-container { bottom: 16px; left: 16px; right: 16px; }
+    .notification-banner { min-width: unset; max-width: 100%; }
 }
 
 @media (max-width: 480px) {
-    .notification-item {
-        flex-direction: row !important; /* keep side by side, just smaller */
-    }
-
-    .notification-icon {
-        width: 34px !important;
-        height: 34px !important;
-    }
-
+    .notification-icon { width: 34px !important; height: 34px !important; }
     .notification-icon i { font-size: 14px !important; }
 }

@@ -114,20 +114,27 @@ async function handleLogin() {
 
         if (officialLogin) {
             console.log('[PMACS Login] Found as official, role_code:', officialLogin.role_code);
-            // Get name from officials_details
+
+            // Try to get full name from officials_details
+            // If RLS blocks it, fall back to officials_username
+            let displayName = username;
             const { data: officialInfo } = await supabase
                 .from('officials_details')
                 .select('officials_name')
                 .eq('officials_id', officialLogin.officials_id)
-                .single();
+                .maybeSingle();
+
+            if (officialInfo?.officials_name) {
+                displayName = officialInfo.officials_name;
+            }
 
             const roleCode = Number(officialLogin.role_code);
 
             if (roleCode === 829) {
-                saveSession('collector', officialLogin.officials_id, officialInfo?.officials_name || username);
+                saveSession('collector', officialLogin.officials_id, displayName);
                 window.location.href = ROUTES.collector;
             } else if (roleCode === 23646) {
-                saveSession('admin', officialLogin.officials_id, officialInfo?.officials_name || username);
+                saveSession('admin', officialLogin.officials_id, displayName);
                 window.location.href = ROUTES.admin;
             } else {
                 setLoading(false);

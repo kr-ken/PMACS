@@ -17,9 +17,9 @@
         </div>
         <div class="top-links">
             <!-- Collector name shown here once logged in -->
-            <span id="collectorName" style="color:rgba(255,255,255,0.85); font-size:13px; font-weight:600; padding:8px 15px;">
-                    <i class="fa-solid fa-user-tie" style="margin-right:6px;"></i>Loading...
-                </span>
+            <span id="collectorName" style="color:rgba(255,255,255,0.85); font-size:13px; font-weight:600; padding:8px 15px; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-user-tie"></i><span id="collectorNameText">Loading...</span>
+            </span>
             <a href="#">SETTINGS</a>
             <a href="#" onclick="window.handleLogout()">LOGOUT</a>
         </div>
@@ -45,7 +45,7 @@
             <button id="openTaxList" class="tax-list-trigger" onclick="window.openTaxList()">
                 <i class="fa-solid fa-file-invoice-dollar"></i> TAX LIST
             </button>
-            <div class="search-box">
+            <div class="search-box search-box-wide">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
                 <label for="vendorSearch"></label>
                 <input type="text" id="vendorSearch" class="search-input" placeholder="Search vendors...">
@@ -119,15 +119,10 @@
 <div id="notificationsContainer" class="notifications-container"></div>
 
 <script type="module" src="tax_collection.js"></script>
-<script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-    const supabase = createClient(
-        'https://kbrwqixrbxlmopyxbrnj.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA'
-    );
-    window.handleLogout = async () => {
-        await supabase.auth.signOut();
-        window.location.href = "../login/login.html";
+<script>
+    window.handleLogout = () => {
+        sessionStorage.clear();
+        window.location.href = "../login_page/login.html";
     };
 </script>
 </body>
