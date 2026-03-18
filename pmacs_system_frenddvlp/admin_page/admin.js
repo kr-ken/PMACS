@@ -27,14 +27,14 @@ let currentTab = 'daily';
 function requireAuth() {
     const role = sessionStorage.getItem('pmacs_role');
     if (!role || role !== 'admin') {
-        window.location.href = '../login_page/login.html';
+        window.location.href = '../login_page/index.html';
     }
 }
 
 // ── Logout ──
 window.handleLogout = () => {
     sessionStorage.clear();
-    window.location.href = '../login_page/login.html';
+    window.location.href = '../login_page/index.html';
 };
 
 // ── Admin name ──
