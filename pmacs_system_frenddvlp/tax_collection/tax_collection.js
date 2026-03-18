@@ -4,19 +4,18 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+// Import your shared Firebase config and tax rates
+import { firebaseConfig, taxRates } from "./shared.js"; 
+
 // --- CONFIGURATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyA0zUwFQHAG0jMLGoTwKHzntCoyksX4dnw",
-    authDomain: "pmacs-0001.firebaseapp.com",
-    projectId: "pmacs-0001",
-    databaseURL: "https://pmacs-0001-default-rtdb.asia-southeast1.firebasedatabase.app", // ← verify in Firebase Console
-    storageBucket: "pmacs-0001.firebasestorage.app",
-    messagingSenderId: "73881840540",
-    appId: "1:73881840540:web:d8194aec335cbfcf527659",
-};
+// (The hardcoded firebaseConfig block has been removed)
 
 const supabaseUrl = 'https://kbrwqixrbxlmopyxbrnj.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Keep your full existing key here
+
+// Initialize Firebase using the imported config
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 const firebaseApp = initializeApp(firebaseConfig);
 const rtdb = getDatabase(firebaseApp);
