@@ -43,9 +43,6 @@ async function init() {
     // Vendors must load before cache + firebase (they depend on allVendors)
     await fetchVendors();
 
-    // Check if it's a new day — reset Firebase if needed before loading state
-    await checkAndResetForNewDay();
-
     // Cache + Firebase state can run in parallel after vendors loaded
     await Promise.all([
         loadCachedAmounts(),
@@ -65,7 +62,7 @@ function updateDateDisplay() {
 function requireAuth() {
     const role = sessionStorage.getItem('pmacs_role');
     if (!role || role !== 'collector') {
-        window.location.href = '/login_page/index.html';
+        window.location.href = '/PMACS/login_page/index.html';
     }
 }
 
@@ -102,7 +99,7 @@ async function loadCollectorInfo() {
 // --- LOGOUT ---
 window.handleLogout = () => {
     sessionStorage.clear();
-    window.location.href = '/login_page/index.html';
+    window.location.href = '/PMACS/login_page/index.html';
 };
 
 // --- SUPABASE: READ ONLY ---

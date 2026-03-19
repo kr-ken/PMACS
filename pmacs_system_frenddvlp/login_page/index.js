@@ -6,9 +6,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ── Page routes (relative to login_page/) ──
 const ROUTES = {
-    vendor:    '/vendor_details_page/vendors_page.html',
-    collector: '/tax_collection/tax_collection.html',
-    admin:     '/admin_page/admin.html',
+    vendor:    '/PMACS/vendor_details_page/vendors_page.html',
+    collector: '/PMACS/tax_collection/tax_collection.html',
+    admin:     '/PMACS/admin_page/admin.html',
 };
 
 // ── DOM refs ──
