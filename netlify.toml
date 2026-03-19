@@ -1,28 +1,10 @@
 [build]
   publish = "pmacs_system_frenddvlp"
 
-# Root redirect to login page
+# Redirect root to login page
 [[redirects]]
   from = "/"
   to = "/login_page/index.html"
-  status = 200
-
-# Fix post-login redirects — collector
-[[redirects]]
-  from = "/tax_collection/tax_collection.html"
-  to = "/tax_collection/tax_collection.html"
-  status = 200
-
-# Fix post-login redirects — admin
-[[redirects]]
-  from = "/admin_page/admin.html"
-  to = "/admin_page/admin.html"
-  status = 200
-
-# Fix post-login redirects — vendor
-[[redirects]]
-  from = "/vendor_details_page/vendors_page.html"
-  to = "/vendor_details_page/vendors_page.html"
   status = 200
 
 # Catch-all 404 back to login
