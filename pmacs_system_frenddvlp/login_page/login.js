@@ -4,11 +4,11 @@ const supabaseUrl = 'https://kbrwqixrbxlmopyxbrnj.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ── Page routes (relative to login_page/) ──
+// ── Page routes (relative to login_page/login.html) ──
 const ROUTES = {
-    vendor:    '/PMACS/vendor_details_page/vendors_page.html',
-    collector: '/PMACS/tax_collection/tax_collection.html',
-    admin:     '/PMACS/admin_page/admin.html',
+    vendor:    '../vendor_details_page/vendors_page.html',
+    collector: '../tax_collection/tax_collection.html',
+    admin:     '../admin_page/admin.html',
 };
 
 // ── DOM refs ──
