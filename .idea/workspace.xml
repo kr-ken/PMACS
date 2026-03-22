@@ -5,14 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5e603f5d-5621-4ecd-aabe-ab2efe4cb72d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/notification/notification.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/notification/notification.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/notifications/notifications.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/login_page/login.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
