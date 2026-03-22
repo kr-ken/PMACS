@@ -62,7 +62,7 @@ function updateDateDisplay() {
 function requireAuth() {
     const role = sessionStorage.getItem('pmacs_role');
     if (!role || role !== 'collector') {
-        window.location.href = '/PMACS/login_page/index.html';
+        window.location.href = '/PMACS/login_page/login.html';
     }
 }
 
@@ -99,7 +99,7 @@ async function loadCollectorInfo() {
 // --- LOGOUT ---
 window.handleLogout = () => {
     sessionStorage.clear();
-    window.location.href = '/PMACS/login_page/index.html';
+    window.location.href = '/PMACS/login_page/login.html';
 };
 
 // --- SUPABASE: READ ONLY ---
@@ -109,10 +109,18 @@ async function loadTaxRates() {
         .select('product_services, amount_range, collection_fee_id');
     if (error) { console.error('loadTaxRates:', error.message); return; }
     (data || []).forEach(fee => {
+        // Key by product_services alone (fallback)
         taxFeesLookup[fee.product_services] = {
             range: fee.amount_range,
             id: fee.collection_fee_id
         };
+        // Key by area:product_services (more specific — preferred)
+        if (fee.area) {
+            taxFeesLookup[`${fee.area}:${fee.product_services}`] = {
+                range: fee.amount_range,
+                id: fee.collection_fee_id
+            };
+        }
     });
 }
 
@@ -189,7 +197,7 @@ async function loadFirebaseState() {
 
 // --- FIREBASE RTDB: write single vendor ---
 async function syncVendorToRTDB(vendor, extra = {}) {
-    const feeEntry = taxFeesLookup[vendor.product_services] || {};
+    const feeEntry = taxFeesLookup[`${vendor.vendor_stall_area}:${vendor.product_services}`] || taxFeesLookup[vendor.product_services] || {};
     await set(ref(rtdb, `vendor_realtime/${vendor.vendor_id}`), {
         vendor_id:        String(vendor.vendor_id),
         vendor_name:      vendor.vendor_name,
@@ -211,7 +219,7 @@ async function upsertPaymentToSupabase(vendor, paidAmount) {
         return;
     }
 
-    const feeEntry = taxFeesLookup[vendor.product_services] || {};
+    const feeEntry = taxFeesLookup[`${vendor.vendor_stall_area}:${vendor.product_services}`] || taxFeesLookup[vendor.product_services] || {};
 
     const { error } = await supabase
         .from('tax_dscrpt_summary')
@@ -403,7 +411,7 @@ window.unlockPayment = async (vendorId) => {
         });
     }
 
-    const feeEntry = taxFeesLookup[vendor?.product_services] || {};
+    const feeEntry = taxFeesLookup[`${vendor?.vendor_stall_area}:${vendor?.product_services}`] || taxFeesLookup[vendor?.product_services] || {};
     window.validateRange(vendorId, feeEntry.range || "0.00");
 };
 

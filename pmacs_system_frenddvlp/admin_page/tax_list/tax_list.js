@@ -7,6 +7,21 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
+// --- NOTIFICATION HELPER ---
+async function saveNotification(collectionFeeId, message, notifType) {
+    try {
+        await supabase.from('notification').insert([{
+            collection_fee_id: collectionFeeId,
+            message: message,
+            is_read: false,
+            notif_type: notifType,
+            notif_at: new Date().toISOString()
+        }]);
+    } catch (e) {
+        console.warn('Failed to save notification:', e.message);
+    }
+}
+
 // --- GLOBAL STATE ---
 let collectionFees = [];
 let currentEditingId = null;
@@ -101,6 +116,7 @@ async function handleTaxSubmit(e) {
 
             if (error) throw error;
             showNotification("Tax updated successfully.");
+            await saveNotification(currentEditingId, `Tax fee updated: ${productServices} (${area}) — now ₱${amountRange}`, 'update');
         } else {
             const { error } = await supabase
                 .from('collection_fees')
@@ -109,6 +125,9 @@ async function handleTaxSubmit(e) {
 
             if (error) throw error;
             showNotification("New tax added successfully.");
+            // Save to Supabase notification table
+            const { data: newFee } = await supabase.from('collection_fees').select('collection_fee_id').eq('product_services', productServices).eq('area', area).single();
+            if (newFee) await saveNotification(newFee.collection_fee_id, `New tax fee added: ${productServices} (${area}) — ₱${amountRange}`, 'addition');
         }
 
 
@@ -134,6 +153,11 @@ window.confirmDelete = async function() {
 
         if (error) throw error;
 
+        // Get fee details before it's fully gone from local state
+        const deletedFee = collectionFees.find(f => f.collection_fee_id === taxToDeleteId);
+        if (deletedFee) {
+            await saveNotification(taxToDeleteId, `Tax fee removed: ${deletedFee.product_services} (${deletedFee.area}) — was ₱${deletedFee.amount_range}`, 'deletion');
+        }
 
         showNotification("Tax deleted successfully.");
         closeDeleteConfirm();

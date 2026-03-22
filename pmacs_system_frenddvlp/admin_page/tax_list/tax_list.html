@@ -76,12 +76,16 @@
                            placeholder="e.g., Water Supply, Electricity">
                 </div>
                 <div class="form-group">
-                    <label>Range Type</label>
-                    <div class="radio-group">
-                        <label class="radio-label"><input type="radio" name="rangeType" value="fixed" checked
-                                                          onchange="updateRangeFields()"> Fixed Amount</label>
-                        <label class="radio-label"><input type="radio" name="rangeType" value="range"
-                                                          onchange="updateRangeFields()"> Range Based</label>
+                    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+                        <label style="font-size:12px;font-weight:700;color:#224263;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin:0;">Range Type</label>
+                        <div style="display:flex;gap:16px;align-items:center;">
+                            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#224263;cursor:pointer;margin:0;">
+                                <input type="radio" name="rangeType" value="fixed" checked onchange="updateRangeFields()" style="width:16px;height:16px;accent-color:#2971b9;"> Fixed Amount
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#224263;cursor:pointer;margin:0;">
+                                <input type="radio" name="rangeType" value="range" onchange="updateRangeFields()" style="width:16px;height:16px;accent-color:#2971b9;"> Range Based
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group" id="amount-group">

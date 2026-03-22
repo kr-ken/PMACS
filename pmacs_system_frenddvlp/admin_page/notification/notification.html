@@ -9,51 +9,51 @@
 </head>
 <body class="page-active">
 
-    <header class="top-nav">
-        <div class="nav-top-row">
-            <div class="logo-area">
-                <div class="logo-icon"><img src="../../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
-                <h2>PMACS Admin</h2>
-            </div>
-            <div class="top-links">
-                <a href="#">SETTINGS</a>
-                <a href="#" onclick="window.handleLogout()">LOGOUT</a>
-            </div>
+<header class="top-nav">
+    <div class="nav-top-row">
+        <div class="logo-area">
+            <div class="logo-icon"><img src="/PMACS/images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
+            <h2>PMACS Admin</h2>
         </div>
-
-        <nav class="main-menu">
-            <a href="../vendor_list/vendor.html" class="menu-item">VENDOR <i class="fa-solid fa-address-card"></i></a>
-            <a href="../admin.html" class="menu-item">DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
-            <a href="notification.html" class="menu-item active">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
-            <a href="../tax_list/tax_list.html" class="menu-item">TAX LIST <i class="fa-solid fa-receipt"></i></a>
-        </nav>
-    </header>
-
-    <main class="main-content">
-        <div class="page-header">
-            <div class="title-area">
-                <h1>NOTIFICATIONS</h1>
-                <p>ANNOUNCEMENTS AND SYSTEM ALERTS</p>
-            </div>
-            <div class="header-right">
-                <button class="btn btn-primary" id="btnMarkAllRead">Mark all as read</button>
-            </div>
+        <div class="top-links">
+            <a href="#">SETTINGS</a>
+            <a href="#" onclick="window.handleLogout()">LOGOUT</a>
         </div>
+    </div>
 
-        <div class="notif-history">
-            <h3><i class="fa-solid fa-clock-rotate-left"></i> Notification History</h3>
-            <div class="notif-list" id="notification-list">
-                <!-- Notifications will be loaded here from Supabase -->
-                <p style="text-align: center; padding: 20px;">Loading notifications...</p>
-            </div>
+    <nav class="main-menu">
+        <a href="../vendor_list/vendor.html" class="menu-item">VENDOR <i class="fa-solid fa-address-card"></i></a>
+        <a href="../admin.html" class="menu-item">DASHBOARD <i class="fa-solid fa-chalkboard"></i></a>
+        <a href="notification.html" class="menu-item active">NOTIFICATIONS <i class="fa-solid fa-bell"></i></a>
+        <a href="../tax_list/tax_list.html" class="menu-item">TAX LIST <i class="fa-solid fa-receipt"></i></a>
+    </nav>
+</header>
+
+<main class="main-content">
+    <div class="page-header">
+        <div class="title-area">
+            <h1>NOTIFICATIONS</h1>
+            <p>ANNOUNCEMENTS AND SYSTEM ALERTS</p>
         </div>
-    </main>
+        <div class="header-right">
+            <button class="btn btn-primary" id="btnMarkAllRead">Mark all as read</button>
+        </div>
+    </div>
 
-    <script type="module" src="notification.js"></script>
+    <div class="notif-history">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Notification History</h3>
+        <div class="notif-list" id="notification-list">
+            <!-- Notifications will be loaded here from Supabase -->
+            <p style="text-align: center; padding: 20px;">Loading notifications...</p>
+        </div>
+    </div>
+</main>
+
+<script type="module" src="notification.js"></script>
 <script>
     window.handleLogout = () => {
         sessionStorage.clear();
-        window.location.href = "../../login_page/login.html";
+        window.location.href = "/PMACS/login_page/login.html";
     };
 </script>
 </body>
