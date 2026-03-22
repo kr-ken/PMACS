@@ -62,7 +62,7 @@ function updateDateDisplay() {
 function requireAuth() {
     const role = sessionStorage.getItem('pmacs_role');
     if (!role || role !== 'collector') {
-        window.location.href = '/PMACS/login_page/login.html';
+        window.location.href = '../login_page/login.html';
     }
 }
 
@@ -99,7 +99,7 @@ async function loadCollectorInfo() {
 // --- LOGOUT ---
 window.handleLogout = () => {
     sessionStorage.clear();
-    window.location.href = '/PMACS/login_page/login.html';
+    window.location.href = '../login_page/login.html';
 };
 
 // --- SUPABASE: READ ONLY ---

@@ -40,7 +40,7 @@ if (collectorEl) {
 // ── Logout ──
 window.handleLogout = () => {
     sessionStorage.clear();
-    window.location.href = "..//login_page/index.html";
+    window.location.href = "../login_page/login.html";
 };
 
 // ── Init pies ──

@@ -14,7 +14,7 @@
 <header class="top-nav">
     <div class="nav-top-row">
         <div class="logo-area">
-            <div class="logo-icon"><img src="/PMACS/images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
+            <div class="logo-icon"><img src="../../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
             <h2>PMACS Admin</h2>
         </div>
         <div class="top-links">
@@ -156,6 +156,12 @@
 <div id="notificationsContainer" class="notifications-container"></div>
 
 <script src="tax_list.js" type="module"></script>
+<script>
+    window.handleLogout = () => {
+        sessionStorage.clear();
+        window.location.href = "../../login_page/login.html";
+    };
+</script>
 </body>
 
 </html>
