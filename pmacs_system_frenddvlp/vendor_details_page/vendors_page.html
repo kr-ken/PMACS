@@ -3,20 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Details</title>
+    <title>PMACS - My Profile</title>
     <link rel="stylesheet" href="vendors_page.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="details-container">
-        <h1>Vendor Information</h1>
-        <div id="vendor-details-content"></div>
-        <a href="../report_page/report.html" id="report-link">View Tax Report</a>
+
+<header class="top-nav">
+    <div class="nav-top-row">
+        <div class="logo-area">
+            <div class="logo-icon"><img src="../images/pmacs_logo_bw.png" alt="PMACS"></div>
+            <h2>PMACS</h2>
+        </div>
+        <div class="top-links">
+            <span class="user-badge">
+                <i class="fa-solid fa-store"></i>
+                <span id="vendorNameText">Loading...</span>
+            </span>
+            <a href="#" onclick="window.handleLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+            </a>
+        </div>
     </div>
+    <nav class="main-menu">
+        <a href="dashboard_vendor/dshbvendor.html" class="menu-item">
+            DASHBOARD <i class="fa-solid fa-gauge-high"></i>
+        </a>
+        <a href="vendors_page.html" class="menu-item active">
+            MY PROFILE <i class="fa-solid fa-id-card"></i>
+        </a>
+    </nav>
+</header>
 
-    <!-- Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<main class="main-content">
+    <div class="content-card">
 
-    <!-- Local Scripts -->
-    <script src="vendors_page.js"></script>
+        <div class="page-header">
+            <div class="title-area">
+                <h1>MY PROFILE</h1>
+                <p>Your vendor information &amp; permit status</p>
+                <div class="date-display" id="currentDate">LOADING DATE...</div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading-state" class="loading-state">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <p>Loading your profile...</p>
+        </div>
+
+        <!-- Profile content -->
+        <div id="profile-content" style="display:none;">
+
+            <!-- Hero -->
+            <div class="profile-hero">
+                <div class="hero-avatar"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="hero-info">
+                    <div class="hero-name" id="hero-name">—</div>
+                    <div class="hero-meta">
+                        <span id="hero-stall-area">—</span>
+                        <span class="hero-sep">·</span>
+                        <span id="hero-product">—</span>
+                    </div>
+                    <div class="hero-badges">
+                        <span class="hero-badge" id="badge-account">—</span>
+                        <span class="hero-badge" id="badge-permit">—</span>
+                    </div>
+                </div>
+                <div class="hero-id-block">
+                    <div class="hero-id-label">VENDOR ID</div>
+                    <div class="hero-id-value" id="hero-vendor-id">—</div>
+                </div>
+            </div>
+
+            <!-- Two-column: Personal + Stall -->
+            <div class="two-col-row">
+
+                <!-- Personal Information -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fa-solid fa-circle-user"></i>
+                        Personal Information
+                    </div>
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-user"></i> Full Name</span>
+                            <span class="detail-val" id="d-name">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-venus-mars"></i> Gender</span>
+                            <span class="detail-val" id="d-gender">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-cake-candles"></i> Birthdate</span>
+                            <span class="detail-val" id="d-birthdate">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-phone"></i> Contact No.</span>
+                            <span class="detail-val" id="d-contact">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-envelope"></i> Email</span>
+                            <span class="detail-val" id="d-email">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-location-dot"></i> Address</span>
+                            <span class="detail-val" id="d-address">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-calendar-plus"></i> Member Since</span>
+                            <span class="detail-val" id="d-created">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stall Information -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fa-solid fa-store"></i>
+                        Stall Information
+                    </div>
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-sign-hanging"></i> Stall Name</span>
+                            <span class="detail-val lg" id="d-stall-name">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-hashtag"></i> Stall Number</span>
+                            <span class="detail-val" id="d-stall-no">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-map-pin"></i> Stall Area</span>
+                            <span class="detail-val" id="d-stall-area">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-basket-shopping"></i> Product / Services</span>
+                            <span class="detail-val" id="d-product">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-person-walking-arrow-right"></i> Stand-in Vendor</span>
+                            <span class="detail-val" id="d-standin">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-circle-dot"></i> Account Status</span>
+                            <span class="detail-val" id="d-status">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-lbl"><i class="fa-solid fa-shield-check"></i> Validity Flag</span>
+                            <span class="detail-val" id="d-validity">—</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Permit card -->
+            <div class="permit-full-card">
+                <div class="info-card-header">
+                    <i class="fa-solid fa-file-certificate"></i>
+                    Business Permit &amp; Validity Record
+                </div>
+                <div id="no-permit" style="display:none;">
+                    <div class="empty-block">
+                        <i class="fa-solid fa-file-circle-xmark"></i>
+                        <p>No permit record on file. Contact the market administrator.</p>
+                    </div>
+                </div>
+                <div id="permit-details" style="display:none;">
+                    <div class="permit-status-bar" id="permit-status-bar">
+                        <div class="pstatus-icon" id="pstatus-icon"><i class="fa-solid fa-shield-check"></i></div>
+                        <div class="pstatus-text">
+                            <div class="pstatus-title" id="pstatus-title">VALID</div>
+                            <div class="pstatus-sub"   id="pstatus-sub">Permit is active and up to date.</div>
+                        </div>
+                        <div class="pstatus-days" id="pstatus-days"></div>
+                    </div>
+                    <div class="permit-grid">
+                        <div class="permit-item">
+                            <div class="permit-item-label">Business ID No.</div>
+                            <div class="permit-item-value" id="p-biz-id">—</div>
+                        </div>
+                        <div class="permit-item">
+                            <div class="permit-item-label">Business TIN</div>
+                            <div class="permit-item-value" id="p-tin">—</div>
+                        </div>
+                        <div class="permit-item">
+                            <div class="permit-item-label">Permit No.</div>
+                            <div class="permit-item-value" id="p-permit-no">—</div>
+                        </div>
+                        <div class="permit-item">
+                            <div class="permit-item-label">Date Issued</div>
+                            <div class="permit-item-value" id="p-issued">—</div>
+                        </div>
+                        <div class="permit-item">
+                            <div class="permit-item-label">Valid Until</div>
+                            <div class="permit-item-value highlight" id="p-until">—</div>
+                        </div>
+                        <div class="permit-item">
+                            <div class="permit-item-label">Status</div>
+                            <div class="permit-item-value" id="p-status">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /profile-content -->
+
+    </div><!-- /content-card -->
+</main>
+
+<script type="module" src="vendors_page.js"></script>
 </body>
 </html>

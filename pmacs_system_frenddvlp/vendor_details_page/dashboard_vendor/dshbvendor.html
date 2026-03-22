@@ -1,12 +1,183 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>PMACS - Dashboard for Vendors</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMACS - Vendor Dashboard</title>
     <link rel="stylesheet" href="dshbvendor.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class = "dashboard-container">
-        <div></div>
-    <script src = "dshbvendor.js" defer> </script>
+
+<!-- ── TOP NAV ── -->
+<header class="top-nav">
+    <div class="nav-top-row">
+        <div class="logo-area">
+            <div class="logo-icon"><img src="../../images/pmacs_logo_bw.png" alt="PMACS Logo"></div>
+            <h2>PMACS</h2>
+        </div>
+        <div class="top-links">
+            <span id="vendorNameDisplay" class="user-greeting">
+                <i class="fa-solid fa-store"></i>
+                <span id="vendorNameText">Loading...</span>
+            </span>
+            <a href="#" onclick="window.handleLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+            </a>
+        </div>
+    </div>
+    <nav class="main-menu">
+        <a href="dshbvendor.html" class="menu-item active">DASHBOARD <i class="fa-solid fa-gauge-high"></i></a>
+        <a href="../vendors_page.html" class="menu-item">MY PROFILE <i class="fa-solid fa-id-card"></i></a>
+    </nav>
+</header>
+
+<!-- ── MAIN CONTENT ── -->
+<main class="main-content">
+
+    <!-- Page header -->
+    <div class="page-header">
+        <div class="title-area">
+            <h1>VENDOR DASHBOARD</h1>
+            <p>YOUR REAL-TIME TAX & ATTENDANCE OVERVIEW</p>
+            <h2 class="date-display" id="currentDate">LOADING DATE...</h2>
+        </div>
+    </div>
+
+    <!-- ── Row 1: Today's status cards ── -->
+    <div class="stats-row">
+
+        <!-- Attendance status -->
+        <div class="stat-card insight-card" id="card-attendance">
+            <div class="insight-label"><i class="fa-solid fa-user-check"></i> ATTENDANCE TODAY</div>
+            <div class="insight-value" id="stat-attendance-status">—</div>
+            <div class="insight-sub" id="stat-attendance-sub">Checking status...</div>
+        </div>
+
+        <!-- Payment status -->
+        <div class="stat-card insight-card" id="card-payment">
+            <div class="insight-label"><i class="fa-solid fa-peso-sign"></i> PAYMENT STATUS</div>
+            <div class="insight-value" id="stat-payment-status">—</div>
+            <div class="insight-sub" id="stat-payment-sub">Checking payment...</div>
+        </div>
+
+        <!-- Tax reference -->
+        <div class="stat-card insight-card">
+            <div class="insight-label"><i class="fa-solid fa-receipt"></i> TAX REFERENCE</div>
+            <div class="insight-value blue" id="stat-tax-ref">—</div>
+            <div class="insight-sub" id="stat-stall-info">Loading stall info...</div>
+        </div>
+
+    </div>
+
+    <!-- ── Row 2: Vendor Info quick panel ── -->
+    <div class="stat-card info-panel">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title"><i class="fa-solid fa-store"></i> MY STALL INFORMATION</div>
+                <div class="chart-sub">Details from Supabase vendor profile</div>
+            </div>
+            <a href="../vendors_page.html" class="btn-viewmore">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> VIEW FULL PROFILE
+            </a>
+        </div>
+        <div class="info-grid" id="vendor-info-grid">
+            <div class="info-item"><span class="info-label">NAME</span><span class="info-value" id="info-name">—</span></div>
+            <div class="info-item"><span class="info-label">STALL NAME</span><span class="info-value" id="info-stall-name">—</span></div>
+            <div class="info-item"><span class="info-label">STALL NO.</span><span class="info-value" id="info-stall-no">—</span></div>
+            <div class="info-item"><span class="info-label">STALL AREA</span><span class="info-value" id="info-stall-area">—</span></div>
+            <div class="info-item"><span class="info-label">PRODUCT/SERVICE</span><span class="info-value" id="info-product">—</span></div>
+            <div class="info-item"><span class="info-label">CONTACT NO.</span><span class="info-value" id="info-contact">—</span></div>
+        </div>
+    </div>
+
+    <!-- ── Row 3: Transaction History ── -->
+    <div class="stat-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title"><i class="fa-solid fa-clock-rotate-left"></i> TRANSACTION HISTORY</div>
+                <div class="chart-sub">Your attendance & payment records from Firebase</div>
+            </div>
+            <div class="filter-group">
+                <select id="txn-filter" class="filter-select" onchange="filterTransactions()">
+                    <option value="all">All Records</option>
+                    <option value="paid">Paid Only</option>
+                    <option value="unpaid">Unpaid Only</option>
+                    <option value="absent">Absent Days</option>
+                </select>
+            </div>
+        </div>
+        <div class="txn-table-wrap">
+            <table class="txn-table">
+                <thead>
+                <tr>
+                    <th>DATE / TIME</th>
+                    <th>STALL AREA</th>
+                    <th>PRODUCT</th>
+                    <th>TAX REF.</th>
+                    <th>AMOUNT PAID</th>
+                    <th>ATTENDANCE</th>
+                    <th>PAYMENT</th>
+                    <th>TICKET</th>
+                </tr>
+                </thead>
+                <tbody id="txn-list">
+                <tr><td colspan="8" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Loading transactions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Row 4: Notifications ── -->
+    <div class="stat-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title"><i class="fa-solid fa-bell"></i> NOTIFICATIONS</div>
+                <div class="chart-sub">System announcements and updates</div>
+            </div>
+            <span class="badge-notif" id="unread-count" style="display:none;">0 NEW</span>
+        </div>
+        <div class="notif-list" id="notif-list">
+            <div class="notif-card loading">
+                <div class="notif-info"><p><i class="fa-solid fa-spinner fa-spin"></i> Loading notifications...</p></div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- ── TICKET MODAL ── -->
+<div id="ticket-modal" class="modal-overlay" style="display:none;" onclick="closeTicketModal(event)">
+    <div class="modal-box ticket-modal-box">
+        <div class="ticket-header">
+            <div class="ticket-logo">
+                <img src="../../images/pmacs_logo_bw.png" alt="PMACS" onerror="this.style.display='none'">
+            </div>
+            <div class="ticket-brand">
+                <div class="ticket-title">PMACS</div>
+                <div class="ticket-sub">Public Market Administration Collection System</div>
+            </div>
+        </div>
+        <div class="ticket-divider">
+            <span>OFFICIAL COLLECTION TICKET</span>
+        </div>
+        <div class="ticket-body" id="ticket-body">
+            <!-- filled by JS -->
+        </div>
+        <div class="ticket-footer">
+            <div id="ticket-status-badge" class="ticket-status-badge">PAID</div>
+            <div class="ticket-generated">Generated: <span id="ticket-generated-time"></span></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-print" onclick="printTicket()"><i class="fa-solid fa-print"></i> PRINT TICKET</button>
+            <button class="btn-close-modal" onclick="document.getElementById('ticket-modal').style.display='none'">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── SCRIPTS ── -->
+<script type="module" src="dshbvendor.js"></script>
 </body>
 </html>
