@@ -30,11 +30,11 @@ if (dateEl) {
     dateEl.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
 }
 
-// ── Collector name ──
-const collectorEl = document.getElementById("collectorName");
-if (collectorEl) {
+// ── Admin name ──
+const adminNameEl = document.getElementById("adminName");
+if (adminNameEl) {
     const name = sessionStorage.getItem('pmacs_name');
-    if (name) collectorEl.innerHTML = `<i class="fa-solid fa-user-tie" style="margin-right:6px;"></i>${name}`;
+    if (name) adminNameEl.innerHTML = `<i class="fa-solid fa-user-shield"></i> ${name}`;
 }
 
 // ── Logout ──
@@ -62,23 +62,19 @@ window.switchTab = (tab) => {
 
 // ── RTDB: live today stats ──
 onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
-    if (!snapshot.exists()) {
-        setText("stat-total-money", "₱0.00");
-        setText("legend-paid", "₱0.00");
-        setText("legend-unpaid", "₱0.00");
-        setText("stat-pending", 0);
-        setText("stat-collected", 0);
-        setText("stat-attendance", "0%");
-        setText("legend-present", 0);
-        setText("legend-absent", "0 (₱0.00 Dues)");
-        return;
-    }
+    const todayStr = new Date().toLocaleDateString('en-CA');
 
-    const vendors = Object.values(snapshot.val());
+    if (!snapshot.exists()) { resetStats(); return; }
+
+    const vendors = Object.values(snapshot.val()).filter(v =>
+        v.timestamp && new Date(v.timestamp).toLocaleDateString('en-CA') === todayStr
+    );
+
+    if (!vendors.length) { resetStats(); return; }
+
     let totalCollected = 0, totalToCollect = 0;
     let paidCount = 0, unpaidCount = 0;
     let presentCount = 0, absentCount = 0, totalAbsentDues = 0;
-    const totalVendors = vendors.length;
 
     vendors.forEach(v => {
         if (v.is_present) {
@@ -91,28 +87,132 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
         }
     });
 
+    const totalVendors   = vendors.length;
     const totalPotential = totalCollected + totalToCollect;
-    const collectedPct = totalPotential > 0 ? (totalCollected / totalPotential) * 100 : 0;
-    const attendancePct = totalVendors > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
+    const collectedPct   = totalPotential > 0 ? (totalCollected / totalPotential) * 100 : 0;
+    const attendancePct  = totalVendors   > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
 
-    setText("stat-total-money", `₱${totalCollected.toFixed(2)}`);
-    setText("legend-paid",      `₱${totalCollected.toFixed(2)}`);
-    setText("legend-unpaid",    `₱${totalToCollect.toFixed(2)}`);
-    updatePie("pie-collected", collectedPct);
+    window._todayStats = { totalCollected, totalToCollect, collectedPct, paidCount, unpaidCount, presentCount, absentCount, totalAbsentDues, attendancePct };
+    renderStats(window._todayStats);
+    loadDebtPayments(); // also fetch today's cleared debts from Supabase
 
-    setText("stat-pending",   unpaidCount);
-    setText("stat-collected", paidCount);
-    setText("stat-attendance",  `${attendancePct}%`);
-    setText("legend-present",   presentCount);
-    setText("legend-absent",    `${absentCount} (₱${totalAbsentDues.toFixed(2)} Dues)`);
-    updatePie("pie-attendance", attendancePct);
+}, (err) => console.error('[Admin] RTDB error:', err.message));
 
-    // Update vendor paid/unpaid chart card
-    setText("card-paid-count",   paidCount);
-    setText("card-unpaid-count", unpaidCount);
-    updateMiniBar(paidCount, unpaidCount);
+// ── Supabase: debt payments cleared today (past dates paid today) ──
+async function loadDebtPayments() {
+    // Debt payments = Supabase rows with collection_date < today but tax_recorded IS NOT NULL
+    // We can't easily know "paid today" without a paid_at timestamp,
+    // so we show total cleared debts (non-null past records) as a yellow indicator
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const { data } = await supabase
+        .from('tax_dscrpt_summary')
+        .select('tax_recorded, collection_date')
+        .lt('collection_date', todayStr)
+        .not('tax_recorded', 'is', null);
 
-}, (err) => console.error('[Dashboard] RTDB error:', err.message));
+    if (!data) return;
+    const debtTotal = data.reduce((sum, r) => sum + (parseFloat(r.tax_recorded) || 0), 0);
+    const debtCount = data.length;
+
+    setText('legend-debt',       `₱${debtTotal.toFixed(2)}`);
+    setText('legend-debt-count', `${debtCount} cleared`);
+
+    // Update pie: add debt as yellow segment on collection rate
+    const s = window._todayStats || {};
+    const todayCollected = s.totalCollected || 0;
+    const todayUnpaid    = s.totalToCollect  || 0;
+    const grandTotal     = todayCollected + todayUnpaid + debtTotal;
+    const todayPct       = grandTotal > 0 ? (todayCollected / grandTotal) * 100 : 0;
+    const debtPct        = grandTotal > 0 ? (debtTotal      / grandTotal) * 100 : 0;
+    updatePieThree('pie-collected', 'pie-debt', todayPct, debtPct);
+
+    setText('stat-total-money', `₱${(todayCollected + debtTotal).toFixed(2)}`);
+}
+
+function renderStats(s) {
+    setText("stat-total-money",    `₱${s.totalCollected.toFixed(2)}`);
+    setText("legend-paid",         `₱${s.totalCollected.toFixed(2)}`);
+    setText("legend-unpaid",       `₱${s.totalToCollect.toFixed(2)}`);
+    setText("pie-collected-label", `${Math.round(s.collectedPct)}%`);
+    updatePie("pie-collected", s.collectedPct);
+    setText("stat-pending",        s.unpaidCount);
+    setText("stat-collected",      s.paidCount);
+    setText("card-paid-count",     s.paidCount);
+    setText("card-unpaid-count",   s.unpaidCount);
+    setText("stat-attendance",     `${s.attendancePct}%`);
+    setText("legend-present",      s.presentCount);
+    setText("legend-absent",       `${s.absentCount} (₱${s.totalAbsentDues.toFixed(2)} Dues)`);
+    setText("pie-attendance-label",`${s.attendancePct}%`);
+    setText("legend-present-pie",  s.presentCount);
+    setText("legend-absent-pie",   s.absentCount);
+    updatePie("pie-attendance", s.attendancePct);
+    updateMiniBar(s.paidCount, s.unpaidCount);
+}
+
+function resetStats() {
+    ["stat-total-money","legend-paid","legend-unpaid"].forEach(id => setText(id, "₱0.00"));
+    setText("legend-debt", "₱0.00");
+    setText("legend-debt-count", "0 cleared");
+    ["stat-pending","stat-collected","card-paid-count","card-unpaid-count",
+     "legend-present","legend-absent-pie","legend-present-pie"].forEach(id => setText(id, "0"));
+    setText("stat-attendance", "0%");
+    setText("pie-collected-label", "0%");
+    setText("pie-attendance-label", "0%");
+    setText("legend-absent", "0 (₱0.00 Dues)");
+    updatePie("pie-collected", 0);
+    updatePie("pie-attendance", 0);
+    updateMiniBar(0, 0);
+    window._todayStats = null;
+    loadDebtPayments();
+}
+
+// Two-arc pie for collection: green (today paid) + yellow (debt cleared)
+function updatePieThree(greenId, yellowId, greenPct, yellowPct) {
+    const greenEl  = document.getElementById(greenId);
+    const yellowEl = document.getElementById(yellowId);
+    if (greenEl)  greenEl.style.strokeDasharray  = `${(greenPct  / 100) * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+    if (yellowEl) {
+        // Yellow arc starts after green arc
+        const greenLen = (greenPct / 100) * CIRCUMFERENCE;
+        yellowEl.style.strokeDasharray  = `${(yellowPct / 100) * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+        yellowEl.style.strokeDashoffset = `-${greenLen}`;
+    }
+}
+
+// ── RTDB: recent activity from Firebase notifications ──
+onValue(ref(rtdb, 'notifications'), (snapshot) => {
+    const listEl = document.getElementById('recent-activity-list');
+    if (!listEl) return;
+
+    if (!snapshot.exists()) {
+        listEl.innerHTML = `<div class="notif-card"><div class="notif-info"><p style="color:#7f8c8d;">No recent activity.</p></div></div>`;
+        return;
+    }
+
+    const items = [];
+    snapshot.forEach(c => items.push(c.val()));
+    items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const recent = items.slice(0, 5);
+
+    const colorMap = { info:'#2971b9', success:'#27ae60', warning:'#f39c12', error:'#e74c3c' };
+    const iconMap  = { info:'fa-info-circle', success:'fa-check-circle', warning:'fa-triangle-exclamation', error:'fa-circle-xmark' };
+
+    listEl.innerHTML = recent.map(n => {
+        const color = colorMap[n.type] || '#2971b9';
+        const icon  = iconMap[n.type]  || 'fa-bell';
+        const time  = n.createdAt ? new Date(n.createdAt).toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' }) : '—';
+        return `<div class="notif-card ${n.read ? '' : 'unread'}" style="border-left:4px solid ${color};">
+            <div class="notif-info">
+                <p style="font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid ${icon}" style="color:${color};"></i>
+                    ${n.title || 'Notification'}
+                </p>
+                <p style="color:#7f8c8d;font-size:13px;">${n.message || ''}</p>
+                <span style="font-size:11px;color:#95a5a6;">${time}</span>
+            </div>
+        </div>`;
+    }).join('');
+});
 
 // ── Supabase: historical chart data ──
 async function loadChartData(tab) {

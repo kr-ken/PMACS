@@ -168,8 +168,8 @@ function renderProfile(v, permit) {
 
     const validEl = document.getElementById('d-validity');
     if (validEl) validEl.innerHTML = v.vendor_validity
-        ? `<span class="chip valid"><i class="fa-solid fa-shield-check"></i> Valid</span>`
-        : `<span class="chip invalid"><i class="fa-solid fa-shield-xmark"></i> Invalid</span>`;
+        ? `<span class="chip valid"><i class="fa-solid fa-shield-halved"></i> Valid</span>`
+        : `<span class="chip invalid"><i class="fa-solid fa-ban"></i> Invalid</span>`;
 
     // ── Permit ──
     renderPermit(permit);
@@ -199,7 +199,7 @@ function renderPermit(permit) {
     const bar = document.getElementById('permit-status-bar');
     if (bar) bar.className = `permit-status-bar ${pc}`;
 
-    const iconMap  = { valid:'fa-shield-check', expiring:'fa-triangle-exclamation', expired:'fa-shield-xmark' };
+    const iconMap  = { valid:'fa-shield-halved', expiring:'fa-triangle-exclamation', expired:'fa-ban' };
     const iconEl   = document.getElementById('pstatus-icon');
     if (iconEl) iconEl.innerHTML = `<i class="fa-solid ${iconMap[pc]}"></i>`;
 

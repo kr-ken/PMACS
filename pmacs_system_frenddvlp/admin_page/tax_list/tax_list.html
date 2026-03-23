@@ -76,41 +76,42 @@
                            placeholder="e.g., Water Supply, Electricity">
                 </div>
                 <div class="form-group">
-                    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-                        <label style="font-size:12px;font-weight:700;color:#224263;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin:0;">Range Type</label>
-                        <div style="display:flex;gap:16px;align-items:center;">
-                            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#224263;cursor:pointer;margin:0;">
-                                <input type="radio" name="rangeType" value="fixed" checked onchange="updateRangeFields()" style="width:16px;height:16px;accent-color:#2971b9;"> Fixed Amount
-                            </label>
-                            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#224263;cursor:pointer;margin:0;">
-                                <input type="radio" name="rangeType" value="range" onchange="updateRangeFields()" style="width:16px;height:16px;accent-color:#2971b9;"> Range Based
-                            </label>
-                        </div>
+                    <label style="display:block;font-size:13px;font-weight:700;color:#224263;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Range Type</label>
+                    <div style="display:flex;gap:24px;align-items:center;background:#f8fafc;padding:12px 16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <label style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#224263;cursor:pointer;margin:0;">
+                            <input type="radio" name="rangeType" value="fixed" checked onchange="updateRangeFields()" style="width:18px;height:18px;accent-color:#2971b9;"> Fixed Amount
+                        </label>
+                        <label style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#224263;cursor:pointer;margin:0;">
+                            <input type="radio" name="rangeType" value="range" onchange="updateRangeFields()" style="width:18px;height:18px;accent-color:#2971b9;"> Range Based
+                        </label>
                     </div>
                 </div>
                 <div class="form-group" id="amount-group">
-                    <label for="amount">Amount (₱)</label>
-                    <input type="number" id="amount" name="amount" step="0.01" required placeholder="0.00">
+                    <label for="amount" style="display:block;margin-bottom:6px;font-weight:600;">Amount (₱)</label>
+                    <input type="number" id="amount" name="amount" step="0.01" required placeholder="0.00" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;">
                 </div>
-                <div id="rangeFields" class="hidden"
-                     style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label for="rangeMin">Minimum (₱)</label>
-                        <input type="number" id="rangeMin" name="rangeMin" step="0.01" placeholder="Min value">
-                    </div>
-                    <div class="form-group">
-                        <label for="rangeMax">Maximum (₱)</label>
-                        <input type="number" id="rangeMax" name="rangeMax" step="0.01" placeholder="Max value">
+                <div id="rangeFields" class="hidden">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div class="form-group">
+                            <label for="rangeMin" style="display:block;margin-bottom:6px;font-weight:600;">Minimum (₱)</label>
+                            <input type="number" id="rangeMin" name="rangeMin" step="0.01" placeholder="Min value" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="rangeMax" style="display:block;margin-bottom:6px;font-weight:600;">Maximum (₱)</label>
+                            <input type="number" id="rangeMax" name="rangeMax" step="0.01" placeholder="Max value" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;">
+                        </div>
                     </div>
                 </div>
-                <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="quantified" name="quantified">
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;color:#224263;background:#f8fafc;padding:12px 16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <input type="checkbox" id="quantified" name="quantified" style="width:18px;height:18px;accent-color:#2971b9;flex-shrink:0;">
                         Quantified (Computable by product/weight)
                     </label>
                 </div>
-                <div class="form-actions" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                    <button type="submit" class="btn btn-success">Save Tax Configuration</button>
+                <div style="display:flex;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid #eee;">
+                    <button type="submit" class="btn btn-success" style="flex:1;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Tax Configuration
+                    </button>
                     <button type="button" class="btn btn-secondary" onclick="closeAddTaxModal()">Cancel</button>
                 </div>
             </form>

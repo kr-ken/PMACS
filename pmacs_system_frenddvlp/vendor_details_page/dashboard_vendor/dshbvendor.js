@@ -63,6 +63,47 @@ async function loadVendorProfile() {
     setText('info-stall-area', data.vendor_stall_area    || '—');
     setText('info-product',    data.product_services     || '—');
     setText('info-contact',    data.vendor_number        || '—');
+
+    // ── Load missed (unpaid past) records for this vendor
+    loadVendorDebt(id);
+}
+
+async function loadVendorDebt(id) {
+    const todayStr = new Date().toLocaleDateString('en-CA');
+
+    // Missed = past dates where tax_recorded IS NULL
+    const { data: missed } = await supabase
+        .from('tax_dscrpt_summary')
+        .select('collection_date, amount_range, tax_recorded')
+        .eq('vendor_id', id)
+        .lt('collection_date', todayStr)
+        .is('tax_recorded', null);
+
+    // Cleared debts = past dates where tax_recorded IS NOT NULL
+    const { data: cleared } = await supabase
+        .from('tax_dscrpt_summary')
+        .select('tax_recorded')
+        .eq('vendor_id', id)
+        .lt('collection_date', todayStr)
+        .not('tax_recorded', 'is', null);
+
+    const debtCard  = document.getElementById('card-debt');
+    const missedCount = missed?.length || 0;
+    const clearedTotal = (cleared || []).reduce((s, r) => s + (parseFloat(r.tax_recorded) || 0), 0);
+
+    if (missedCount === 0) {
+        // No missed — show cleared debts total in green
+        if (debtCard) debtCard.className = 'stat-card paid';
+        const valEl = document.getElementById('stat-debt-total');
+        if (valEl) { valEl.textContent = `₱${clearedTotal.toFixed(2)}`; valEl.className = 'stat-value green'; }
+        setText('stat-debt-count', clearedTotal > 0 ? `${cleared.length} debt(s) cleared ✓` : 'No missed payments');
+    } else {
+        // Has missed payments — show warning in amber
+        if (debtCard) debtCard.className = 'stat-card unpaid';
+        const valEl = document.getElementById('stat-debt-total');
+        if (valEl) { valEl.textContent = `${missedCount} unpaid`; valEl.className = 'stat-value orange'; }
+        setText('stat-debt-count', `Please pay missed taxes to the collector`);
+    }
 }
 
 // ══════════════════════════════════════════
@@ -79,13 +120,26 @@ function setTodayStatus(r) {
     const attCard = document.getElementById('card-attendance');
     const payCard = document.getElementById('card-payment');
 
-    if (!r) {
+    // Only show status if the record is from TODAY
+    const isToday = r && r.timestamp && (() => {
+        const recDate = new Date(r.timestamp);
+        const now     = new Date();
+        return recDate.getFullYear() === now.getFullYear() &&
+               recDate.getMonth()    === now.getMonth()    &&
+               recDate.getDate()     === now.getDate();
+    })();
+
+    if (!r || !isToday) {
         setText('stat-attendance', 'NO DATA');
         setText('stat-attendance-sub', 'Not yet recorded for today');
         setText('stat-payment', 'NO DATA');
         setText('stat-payment-sub', 'No payment record today');
-        setText('stat-tax-ref', '—');
-        setText('stat-stall-info', 'Stall info unavailable');
+        setText('stat-tax-ref', r ? r.tax_reference || '—' : '—');
+        setText('stat-stall-info', r
+            ? `${r.stall_area || '—'} · ${r.product_services || '—'}`
+            : 'Stall info unavailable');
+        if (attCard) attCard.className = 'stat-card';
+        if (payCard) payCard.className = 'stat-card';
         return;
     }
 

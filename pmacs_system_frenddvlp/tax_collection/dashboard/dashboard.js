@@ -62,19 +62,15 @@ window.switchTab = (tab) => {
 
 // ── RTDB: live today stats ──
 onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
-    if (!snapshot.exists()) {
-        setText("stat-total-money", "₱0.00");
-        setText("legend-paid", "₱0.00");
-        setText("legend-unpaid", "₱0.00");
-        setText("stat-pending", 0);
-        setText("stat-collected", 0);
-        setText("stat-attendance", "0%");
-        setText("legend-present", 0);
-        setText("legend-absent", "0 (₱0.00 Dues)");
-        return;
-    }
+    const todayStr = new Date().toLocaleDateString('en-CA');
 
-    const vendors = Object.values(snapshot.val());
+    if (!snapshot.exists()) { resetCollectorStats(); return; }
+
+    const vendors = Object.values(snapshot.val()).filter(v =>
+        v.timestamp && new Date(v.timestamp).toLocaleDateString('en-CA') === todayStr
+    );
+    if (!vendors.length) { resetCollectorStats(); return; }
+
     let totalCollected = 0, totalToCollect = 0;
     let paidCount = 0, unpaidCount = 0;
     let presentCount = 0, absentCount = 0, totalAbsentDues = 0;
@@ -92,27 +88,76 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
     });
 
     const totalPotential = totalCollected + totalToCollect;
-    const collectedPct = totalPotential > 0 ? (totalCollected / totalPotential) * 100 : 0;
-    const attendancePct = totalVendors > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
+    const collectedPct   = totalPotential > 0 ? (totalCollected / totalPotential) * 100 : 0;
+    const attendancePct  = totalVendors   > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
 
-    setText("stat-total-money", `₱${totalCollected.toFixed(2)}`);
-    setText("legend-paid",      `₱${totalCollected.toFixed(2)}`);
-    setText("legend-unpaid",    `₱${totalToCollect.toFixed(2)}`);
+    window._collectorTodayStats = { totalCollected, totalToCollect, collectedPct, paidCount, unpaidCount, presentCount, absentCount, totalAbsentDues, attendancePct };
+
+    setText("stat-total-money",      `₱${totalCollected.toFixed(2)}`);
+    setText("stat-total-money-pie",  `₱${totalCollected.toFixed(2)}`);
+    setText("legend-paid",           `₱${totalCollected.toFixed(2)}`);
+    setText("legend-unpaid",         `₱${totalToCollect.toFixed(2)}`);
     updatePie("pie-collected", collectedPct);
 
-    setText("stat-pending",   unpaidCount);
-    setText("stat-collected", paidCount);
-    setText("stat-attendance",  `${attendancePct}%`);
-    setText("legend-present",   presentCount);
-    setText("legend-absent",    `${absentCount} (₱${totalAbsentDues.toFixed(2)} Dues)`);
+    setText("stat-pending",          unpaidCount);
+    setText("stat-collected",        paidCount);
+    setText("stat-attendance",       `${attendancePct}%`);
+    setText("stat-attendance-pie",   `${attendancePct}%`);
+    setText("legend-present",        presentCount);
+    setText("legend-present-pie",    presentCount);
+    setText("legend-absent",         `${absentCount} (₱${totalAbsentDues.toFixed(2)} Dues)`);
+    setText("legend-absent-pie",     absentCount);
     updatePie("pie-attendance", attendancePct);
-
-    // Update vendor paid/unpaid chart card
-    setText("card-paid-count",   paidCount);
-    setText("card-unpaid-count", unpaidCount);
+    setText("card-paid-count",       paidCount);
+    setText("card-unpaid-count",     unpaidCount);
     updateMiniBar(paidCount, unpaidCount);
 
+    loadCollectorDebt();
 }, (err) => console.error('[Dashboard] RTDB error:', err.message));
+
+async function loadCollectorDebt() {
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const { data } = await supabase
+        .from('tax_dscrpt_summary')
+        .select('tax_recorded')
+        .lt('collection_date', todayStr)
+        .not('tax_recorded', 'is', null);
+    if (!data) return;
+    const debtTotal = data.reduce((s, r) => s + (parseFloat(r.tax_recorded) || 0), 0);
+    const debtCount = data.length;
+    setText('legend-debt',       `₱${debtTotal.toFixed(2)}`);
+    setText('legend-debt-count', `${debtCount} cleared`);
+    const s = window._collectorTodayStats || {};
+    const grand    = (s.totalCollected || 0) + (s.totalToCollect || 0) + debtTotal;
+    const todayPct = grand > 0 ? ((s.totalCollected || 0) / grand) * 100 : 0;
+    const debtPct  = grand > 0 ? (debtTotal          / grand) * 100 : 0;
+    updatePieTwo('pie-collected', 'pie-debt', todayPct, debtPct);
+    const total = (s.totalCollected || 0) + debtTotal;
+    setText('stat-total-money',     `₱${total.toFixed(2)}`);
+    setText('stat-total-money-pie', `₱${total.toFixed(2)}`);
+}
+
+function resetCollectorStats() {
+    ["stat-total-money","stat-total-money-pie","legend-paid","legend-unpaid","legend-debt"].forEach(id => setText(id, "₱0.00"));
+    setText("legend-debt-count", "0 cleared");
+    ["stat-pending","stat-collected","card-paid-count","card-unpaid-count","legend-present","legend-present-pie","legend-absent-pie"].forEach(id => setText(id, "0"));
+    setText("stat-attendance","0%"); setText("stat-attendance-pie","0%");
+    setText("legend-absent","0 (₱0.00 Dues)");
+    updatePie("pie-collected",0); updatePie("pie-attendance",0);
+    updateMiniBar(0,0);
+    window._collectorTodayStats = null;
+    loadCollectorDebt();
+}
+
+function updatePieTwo(greenId, yellowId, greenPct, yellowPct) {
+    const g = document.getElementById(greenId);
+    const y = document.getElementById(yellowId);
+    if (g) g.style.strokeDasharray  = `${(greenPct/100)*CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+    if (y) {
+        y.style.strokeDasharray  = `${(yellowPct/100)*CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+        y.style.strokeDashoffset = `-${(greenPct/100)*CIRCUMFERENCE}`;
+    }
+}
 
 // ── Supabase: historical chart data ──
 async function loadChartData(tab) {

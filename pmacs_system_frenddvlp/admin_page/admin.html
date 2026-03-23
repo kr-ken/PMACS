@@ -47,9 +47,13 @@
             <div class="insight-label">TOTAL COLLECTED</div>
             <div class="insight-value green" id="stat-total-money">₱0.00</div>
             <div class="insight-sub">
-                <span class="dot green"></span> Paid: <strong id="legend-paid">₱0.00</strong>
+                <span class="dot green"></span> Today: <strong id="legend-paid">₱0.00</strong>
                 &nbsp;&nbsp;
                 <span class="dot red"></span> Unpaid: <strong id="legend-unpaid">₱0.00</strong>
+            </div>
+            <div class="insight-sub" style="margin-top:4px;">
+                <span class="dot" style="background:#f39c12;"></span> Debts cleared: <strong id="legend-debt" style="color:#f39c12;">₱0.00</strong>
+                &nbsp;<span style="color:#bdc3c7;font-size:11px;" id="legend-debt-count">0 cleared</span>
             </div>
         </div>
 
@@ -117,13 +121,17 @@
                     <svg class="pie-chart" viewBox="0 0 100 100">
                         <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
                         <circle class="pie-paid" cx="50" cy="50" r="40" id="pie-collected" style="stroke-dasharray:0 251.33;"></circle>
+                        <circle cx="50" cy="50" r="40" id="pie-debt"
+                                fill="none" stroke="#f39c12" stroke-width="12" stroke-linecap="round"
+                                style="stroke-dasharray:0 251.33; stroke-dashoffset:0; transition:stroke-dasharray 0.8s ease, stroke-dashoffset 0.8s ease;"></circle>
                     </svg>
                     <div class="pie-center">
                         <span class="pie-value" id="pie-collected-label">0%</span>
                     </div>
                 </div>
                 <div class="pie-legend">
-                    <div class="legend-item"><span class="legend-color paid"></span><span class="legend-text">Collected</span></div>
+                    <div class="legend-item"><span class="legend-color paid"></span><span class="legend-text">Today's Tax</span></div>
+                    <div class="legend-item"><span class="legend-color" style="background:#f39c12;"></span><span class="legend-text">Debts Cleared</span></div>
                     <div class="legend-item"><span class="legend-color pending"></span><span class="legend-text">Pending</span></div>
                 </div>
             </div>

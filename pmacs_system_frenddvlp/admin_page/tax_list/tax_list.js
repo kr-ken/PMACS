@@ -1,21 +1,48 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 // --- SUPABASE INITIALIZATION ---
 const SUPABASE_URL = 'https://kbrwqixrbxlmopyxbrnj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// --- FIREBASE INITIALIZATION ---
+const firebaseConfig = {
+    apiKey: "AIzaSyA0zUwFQHAG0jMLGoTwKHzntCoyksX4dnw",
+    authDomain: "pmacs-0001.firebaseapp.com",
+    projectId: "pmacs-0001",
+    databaseURL: "https://pmacs-0001-default-rtdb.asia-southeast1.firebasedatabase.app",
+    storageBucket: "pmacs-0001.firebasestorage.app",
+    messagingSenderId: "73881840540",
+    appId: "1:73881840540:web:d8194aec335cbfcf527659",
+};
+const rtdb = getDatabase(initializeApp(firebaseConfig));
 
 // --- NOTIFICATION HELPER ---
+// Writes to BOTH Firebase (seen by all roles) and Supabase (admin history)
 async function saveNotification(collectionFeeId, message, notifType) {
     try {
+        const now = Date.now();
+        const typeMap = { addition: 'success', update: 'info', deletion: 'error' };
+        const fbType  = typeMap[notifType] || 'info';
+
+        // 1. Write to Firebase — visible to admin, collectors, vendors
+        await push(ref(rtdb, 'notifications'), {
+            title:     `Tax Fee ${notifType.charAt(0).toUpperCase() + notifType.slice(1)}`,
+            message,
+            type:      fbType,
+            read:      false,
+            createdAt: now,
+        });
+
+        // 2. Write to Supabase — admin notification history
         await supabase.from('notification').insert([{
             collection_fee_id: collectionFeeId,
-            message: message,
-            is_read: false,
+            message,
+            is_read:   false,
             notif_type: notifType,
-            notif_at: new Date().toISOString()
+            notif_at:  new Date(now).toISOString(),
         }]);
     } catch (e) {
         console.warn('Failed to save notification:', e.message);
@@ -26,6 +53,13 @@ async function saveNotification(collectionFeeId, message, notifType) {
 let collectionFees = [];
 let currentEditingId = null;
 let taxToDeleteId = null;
+
+// Extract the first numeric value from a range string like "₱4.75 to ₱20" or "200"
+function parseFirstNumber(str) {
+    if (!str) return null;
+    const nums = String(str).match(/\d+(\.\d+)?/g);
+    return nums ? parseFloat(nums[0]) : null;
+}
 
 
 // --- INITIALIZATION ---
@@ -90,11 +124,11 @@ async function handleTaxSubmit(e) {
 
     if (rangeType === 'fixed') {
         const amount = document.getElementById('amount').value;
-        amountRange = amount.toString();
+        amountRange = `₱${amount}`;
     } else {
         const min = document.getElementById('rangeMin').value;
         const max = document.getElementById('rangeMax').value;
-        amountRange = `${min} - ${max}`;
+        amountRange = `₱${min} to ₱${max}`;
     }
 
 
@@ -108,15 +142,39 @@ async function handleTaxSubmit(e) {
 
     try {
         if (currentEditingId) {
+            // Get the OLD amount before updating so we can detect increase/decrease
+            const oldFee = collectionFees.find(f => f.collection_fee_id === currentEditingId);
+            const oldAmount = oldFee ? parseFirstNumber(oldFee.amount_range) : null;
+            const newAmount = parseFirstNumber(amountRange);
+
             const { error } = await supabase
                 .from('collection_fees')
                 .update(payload)
                 .eq('collection_fee_id', currentEditingId);
 
-
             if (error) throw error;
             showNotification("Tax updated successfully.");
-            await saveNotification(currentEditingId, `Tax fee updated: ${productServices} (${area}) — now ₱${amountRange}`, 'update');
+
+            // Build direction-aware notification message
+            let changeMsg = '';
+            let notifType = 'update';
+            if (oldAmount !== null && newAmount !== null && oldAmount !== newAmount) {
+                if (newAmount > oldAmount) {
+                    changeMsg = ` 📈 INCREASED from ₱${oldFee.amount_range} → ₱${amountRange}`;
+                    notifType = 'warning'; // amber — affects vendors
+                } else {
+                    changeMsg = ` 📉 DECREASED from ₱${oldFee.amount_range} → ₱${amountRange}`;
+                    notifType = 'success'; // green — good news
+                }
+            } else {
+                changeMsg = ` — updated to ₱${amountRange}`;
+            }
+
+            await saveNotification(
+                currentEditingId,
+                `Tax fee for ${productServices} (${area})${changeMsg}`,
+                notifType
+            );
         } else {
             const { error } = await supabase
                 .from('collection_fees')
@@ -170,6 +228,31 @@ window.confirmDelete = async function() {
 
 
 
+
+// Normalize any amount_range string to "₱X to ₱Y" or "₱X"
+// Handles: "10 - 150", "4.35-20", ".65", "₱4.75 to ₱20", "200", etc.
+function formatRange(str) {
+    if (!str) return '—';
+    const s = String(str).trim();
+
+    // Already formatted with peso signs — return as-is
+    if (s.includes('₱')) return s;
+
+    // Number pattern: optional leading digits, optional decimal  e.g. "4.75" or ".65" or "10"
+    const num = '(\\d*\\.?\\d+)';
+
+    // Range: two numbers separated by " - ", "-", " to ", "to"
+    const rangeRe = new RegExp(`^${num}\\s*(?:[-–]|\\bto\\b)\\s*${num}$`, 'i');
+    const rangeMatch = s.match(rangeRe);
+    if (rangeMatch) return `₱${rangeMatch[1]} to ₱${rangeMatch[2]}`;
+
+    // Single number
+    const singleRe = new RegExp(`^${num}$`);
+    if (singleRe.test(s)) return `₱${s}`;
+
+    // Fallback: prepend peso to each number found
+    return s.replace(/(\d*\.?\d+)/g, '₱$1');
+}
 
 // --- DOM MANIPULATION & RENDERING ---
 
@@ -225,7 +308,7 @@ function renderTaxes() {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td><strong>${fee.product_services}</strong></td>
-                <td><span style="font-weight: 600; color: var(--primary-color);">${fee.amount_range}</span></td>
+                <td><span style="font-weight: 600; color: var(--primary-color);">${formatRange(fee.amount_range)}</span></td>
                 <td>${fee['quantified?'] ? 'Quantified' : 'Standard'}</td>
                 <td>
                     <div class="action-btns" style="display: flex; gap: 8px; justify-content: center;">
@@ -306,14 +389,16 @@ window.editTax = function(id) {
     document.getElementById('quantified').checked = tax['quantified?'];
 
 
-    if (tax.amount_range.includes('-')) {
+    // Strip peso signs and normalize for input fields
+    const rawRange = tax.amount_range.replace(/₱/g, '').trim();
+    if (rawRange.match(/[-–to]+/i)) {
         document.querySelector('input[name="rangeType"][value="range"]').checked = true;
-        const [min, max] = tax.amount_range.split('-').map(s => s.trim());
-        document.getElementById('rangeMin').value = min;
-        document.getElementById('rangeMax').value = max;
+        const parts = rawRange.split(/\s*[-–to]+\s*/i).map(s => s.trim()).filter(Boolean);
+        document.getElementById('rangeMin').value = parts[0] || '';
+        document.getElementById('rangeMax').value = parts[1] || '';
     } else {
         document.querySelector('input[name="rangeType"][value="fixed"]').checked = true;
-        document.getElementById('amount').value = tax.amount_range;
+        document.getElementById('amount').value = rawRange;
     }
 
 

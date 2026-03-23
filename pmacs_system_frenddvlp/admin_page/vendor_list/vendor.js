@@ -278,7 +278,7 @@ window.submitRevalidation = async () => {
         const isValid = new Date(validUntil) >= new Date();
         const validityData = {
             vendor_id: parseInt(vid),
-            business_id_no: document.getElementById('revalidate-business-id').value,
+            'business_id_no.': document.getElementById('revalidate-business-id').value,
             business_tin: document.getElementById('revalidate-tin').value,
             business_permit_no: document.getElementById('revalidate-permit-no').value,
             date_issued: dateIssued,
@@ -352,64 +352,184 @@ window.deleteVendor = (id, name) => {
 
 // ── Form Submit ──
 async function submitVendorForm() {
-    const id = document.getElementById('vendor_id').value;
+    const id        = document.getElementById('vendor_id').value;
+    const today     = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const submitBtn = document.getElementById('submitBtn');
+    const errBox    = document.getElementById('form-submit-error');
+
+    // Clear previous error
+    if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+
+    function showFormError(msg) {
+        if (errBox) { errBox.textContent = '⚠ ' + msg; errBox.style.display = 'block'; }
+        showNotification(msg, 'error');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Finish & Register'; }
+    }
+
+    // ── vendor_details payload ──
     const vendorData = {
-        vendor_name:         document.getElementById('vendor_name').value.trim(),
-        vendor_gender:       document.getElementById('vendor_gender').value,
-        vendor_birthdate:    document.getElementById('vendor_birthdate').value,
-        vendor_address:      document.getElementById('vendor_address').value.trim(),
-        vendor_number:       document.getElementById('vendor_number').value.trim(),
-        vendor_email:        document.getElementById('vendor_email').value.trim(),
-        vendor_stall_name:   document.getElementById('vendor_stall_name').value.trim(),
-        vendor_stall_number: document.getElementById('vendor_stall_number').value,
-        vendor_stall_area:   document.getElementById('vendor_stall_area').value,
-        product_services:    document.getElementById('product_services').value,
-        'vendor_stand-in':   document.getElementById('vendor_stand_in').value.trim(),
+        vendor_name:           document.getElementById('vendor_name').value.trim(),
+        vendor_gender:         document.getElementById('vendor_gender').value,
+        vendor_birthdate:      document.getElementById('vendor_birthdate').value,
+        vendor_address:        document.getElementById('vendor_address').value.trim(),
+        vendor_number:         document.getElementById('vendor_number').value.trim(),
+        vendor_email:          document.getElementById('vendor_email').value.trim() || null,
+        vendor_stall_name:     document.getElementById('vendor_stall_name').value.trim(),
+        vendor_stall_number:   parseInt(document.getElementById('vendor_stall_number').value) || 0,
+        vendor_stall_area:     document.getElementById('vendor_stall_area').value,
+        product_services:      document.getElementById('product_services').value,
+        vendor_status:         true,
+        vendor_validity:       false,
+        // Postgres "timestamp without time zone" — use local ISO without timezone offset
+        created_at: new Date().toISOString().replace('T', ' ').replace('Z', '').split('.')[0],
+        // NOTE: 'vendor_stand - in' omitted — PostgREST cannot handle column names with spaces.
+        // Update it separately via raw SQL if needed.
     };
-    const validityData = {
-        business_id_no:     document.getElementById('business_id_no').value.trim(),
+
+    // Validate required fields before hitting Supabase
+    const requiredFields = ['vendor_name','vendor_gender','vendor_birthdate','vendor_address',
+                            'vendor_number','vendor_stall_name','vendor_stall_number',
+                            'vendor_stall_area','product_services'];
+    for (const f of requiredFields) {
+        if (!vendorData[f] && vendorData[f] !== 0) {
+            return showFormError(`Missing required field: ${f.replace(/_/g,' ')}`);
+        }
+    }
+
+    // ── vendor_validity payload ──
+    const validUntilVal = document.getElementById('valid_until').value;
+    const validityData  = {
+        'business_id_no.': document.getElementById('business_id_no').value.trim(),
         business_tin:       document.getElementById('business_tin').value.trim(),
         business_permit_no: document.getElementById('business_permit_no').value.trim(),
         date_issued:        document.getElementById('date_issued').value,
-        valid_until:        document.getElementById('valid_until').value,
+        valid_until:        validUntilVal,
     };
+    vendorData.vendor_validity = !!(validUntilVal && new Date(validUntilVal) >= new Date());
+
     const username = document.getElementById('generated_username').value.trim();
     const password = document.getElementById('generated_password').value.trim();
+
+    console.log('[Register] vendorData:', vendorData);
+    console.log('[Register] validityData:', validityData);
+    console.log('[Register] credentials:', { username, password });
+
     try {
         if (isEditMode && id) {
-            const { error } = await supabase.from('vendor_details').update(vendorData).eq('vendor_id', id);
-            if (error) throw error;
+            const { error: vErr } = await supabase
+                .from('vendor_details').update(vendorData).eq('vendor_id', id);
+            if (vErr) throw new Error(`vendor_details: ${vErr.message}`);
+
             const existing = allValidities.find(v => String(v.vendor_id) === String(id));
             if (existing) {
-                await supabase.from('vendor_validity').update({ ...validityData, vendor_id: parseInt(id) }).eq('vendor_id', id);
+                const { error: pErr } = await supabase
+                    .from('vendor_validity').update({ ...validityData, vendor_id: parseInt(id) }).eq('vendor_id', id);
+                if (pErr) throw new Error(`vendor_validity: ${pErr.message}`);
             } else {
-                await supabase.from('vendor_validity').insert([{ ...validityData, vendor_id: parseInt(id) }]);
+                const { error: pErr } = await supabase
+                    .from('vendor_validity').insert([{ ...validityData, vendor_id: parseInt(id) }]);
+                if (pErr) throw new Error(`vendor_validity: ${pErr.message}`);
             }
             showNotification('Vendor updated successfully!');
+
         } else {
-            const { data: newVendor, error } = await supabase.from('vendor_details').insert([vendorData]).select('vendor_id').single();
-            if (error) throw error;
+            // Step 1: vendor_details
+            const { data: newVendor, error: vErr } = await supabase
+                .from('vendor_details').insert([vendorData]).select('vendor_id').single();
+            if (vErr) throw new Error(`vendor_details: ${vErr.message}`);
             const newId = newVendor.vendor_id;
-            await supabase.from('vendor_validity').insert([{ ...validityData, vendor_id: newId }]);
-            await supabase.from('login_details_vendors').insert([{ vendor_id: newId, vendor_username: username, vendor_confirmedpassword: password }]);
-            showNotification(`Vendor registered! Username: ${username}`);
+            console.log('[Register] vendor_id created:', newId);
+
+            // Step 2: vendor_validity
+            const { error: pErr } = await supabase
+                .from('vendor_validity').insert([{ ...validityData, vendor_id: newId }]);
+            if (pErr) {
+                // Rollback: delete the vendor we just created
+                await supabase.from('vendor_details').delete().eq('vendor_id', newId);
+                throw new Error(`vendor_validity: ${pErr.message}`);
+            }
+
+            // Step 3: login_details_vendors
+            if (!username || !password) throw new Error('Credentials not generated — go back to Step 3.');
+            const { error: lErr } = await supabase
+                .from('login_details_vendors').insert([{
+                    vendor_id:                newId,
+                    vendor_username:          username,
+                    vendor_confirmedpassword: password,
+                }]);
+            if (lErr) {
+                // Rollback both
+                await supabase.from('vendor_validity').delete().eq('vendor_id', newId);
+                await supabase.from('vendor_details').delete().eq('vendor_id', newId);
+                throw new Error(`login_details: ${lErr.message}`);
+            }
+
+            // Step 4: seed tax_dscrpt_summary (tax_recorded = null = not yet paid)
+            // Get collection_fee_id by looking up area + product_services
+            const { data: feeRow } = await supabase
+                .from('collection_fees')
+                .select('collection_fee_id, amount_range, "quantified ?"')
+                .eq('area', vendorData.vendor_stall_area)
+                .eq('product_services', vendorData.product_services)
+                .maybeSingle();
+
+            const officialsId   = parseInt(sessionStorage.getItem('pmacs_id')) || 0;
+            const officialsName = sessionStorage.getItem('pmacs_name') || 'Admin';
+
+            if (feeRow && officialsId) {
+                const { error: tErr } = await supabase
+                    .from('tax_dscrpt_summary')
+                    .insert([{
+                        vendor_id:           newId,
+                        vendor_name:         vendorData.vendor_name,
+                        vendor_stall_name:   vendorData.vendor_stall_name,
+                        vendor_stall_number: vendorData.vendor_stall_number,
+                        area:                vendorData.vendor_stall_area,
+                        officials_id:        officialsId,
+                        officials_name:      officialsName,
+                        collection_fee_id:   feeRow.collection_fee_id,
+                        product_services:    vendorData.product_services,
+                        amount_range:        feeRow.amount_range,
+                        'quantified ?':      feeRow['quantified ?'] ?? false,
+                        tax_recorded:        null,   // not yet paid
+                        collection_date:     today,  // today's date
+                    }]);
+                if (tErr) console.warn('tax_dscrpt_summary seed skipped:', tErr.message);
+                else console.log('[Register] tax_dscrpt_summary seeded for vendor', newId);
+            } else {
+                console.warn('[Register] tax_dscrpt_summary skipped — no fee row found or no officials_id');
+            }
+
+            showNotification(`✓ Registered! Username: ${username} | ID: ${newId}`);
         }
+
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Finish & Register'; }
         document.getElementById('vendorModal').classList.add('hidden');
         document.body.classList.remove('modal-active');
         fetchVendors();
+
     } catch (e) {
-        showNotification('Save failed: ' + e.message, 'error');
+        console.error('[submitVendorForm]', e.message);
+        showFormError(e.message);
     }
 }
 
 function generateCredentials() {
-    const name = document.getElementById('vendor_name')?.value?.trim() || '';
-    const parts = name.split(',').map(p => p.trim());
-    const lastName = parts[0]?.toLowerCase().replace(/\s+/g, '') || 'vendor';
-    const firstName = (parts[1]?.split(' ')[0] || '').toLowerCase();
-    const username = firstName ? `${firstName}.${lastName}` : lastName;
-    const birthdate = document.getElementById('vendor_birthdate')?.value?.replace(/-/g, '') || '00000000';
-    const password = `${lastName}${birthdate.slice(-4)}`;
+    // Name format: "First Name Middle Name Last Name"
+    // Last word = last name
+    const name      = document.getElementById('vendor_name')?.value?.trim() || '';
+    const words     = name.split(/\s+/).filter(Boolean);
+    const lastName  = (words[words.length - 1] || 'vendor').toLowerCase();
+
+    // Username = stall name with all non-alphanumeric removed, lowercase
+    const stallName = document.getElementById('vendor_stall_name')?.value?.trim() || '';
+    const username  = stallName.toLowerCase().replace(/[^a-z0-9]/g, '') || lastName;
+
+    // Password = lastname + stall number
+    const stallNumber = document.getElementById('vendor_stall_number')?.value?.trim() || '0';
+    const password    = `${lastName}${stallNumber}`;
+
     const userEl = document.getElementById('generated_username');
     const passEl = document.getElementById('generated_password');
     if (userEl) userEl.value = username;
