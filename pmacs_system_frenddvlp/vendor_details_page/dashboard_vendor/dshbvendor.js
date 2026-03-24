@@ -63,47 +63,6 @@ async function loadVendorProfile() {
     setText('info-stall-area', data.vendor_stall_area    || '—');
     setText('info-product',    data.product_services     || '—');
     setText('info-contact',    data.vendor_number        || '—');
-
-    // ── Load missed (unpaid past) records for this vendor
-    loadVendorDebt(id);
-}
-
-async function loadVendorDebt(id) {
-    const todayStr = new Date().toLocaleDateString('en-CA');
-
-    // Missed = past dates where tax_recorded IS NULL
-    const { data: missed } = await supabase
-        .from('tax_dscrpt_summary')
-        .select('collection_date, amount_range, tax_recorded')
-        .eq('vendor_id', id)
-        .lt('collection_date', todayStr)
-        .is('tax_recorded', null);
-
-    // Cleared debts = past dates where tax_recorded IS NOT NULL
-    const { data: cleared } = await supabase
-        .from('tax_dscrpt_summary')
-        .select('tax_recorded')
-        .eq('vendor_id', id)
-        .lt('collection_date', todayStr)
-        .not('tax_recorded', 'is', null);
-
-    const debtCard  = document.getElementById('card-debt');
-    const missedCount = missed?.length || 0;
-    const clearedTotal = (cleared || []).reduce((s, r) => s + (parseFloat(r.tax_recorded) || 0), 0);
-
-    if (missedCount === 0) {
-        // No missed — show cleared debts total in green
-        if (debtCard) debtCard.className = 'stat-card paid';
-        const valEl = document.getElementById('stat-debt-total');
-        if (valEl) { valEl.textContent = `₱${clearedTotal.toFixed(2)}`; valEl.className = 'stat-value green'; }
-        setText('stat-debt-count', clearedTotal > 0 ? `${cleared.length} debt(s) cleared ✓` : 'No missed payments');
-    } else {
-        // Has missed payments — show warning in amber
-        if (debtCard) debtCard.className = 'stat-card unpaid';
-        const valEl = document.getElementById('stat-debt-total');
-        if (valEl) { valEl.textContent = `${missedCount} unpaid`; valEl.className = 'stat-value orange'; }
-        setText('stat-debt-count', `Please pay missed taxes to the collector`);
-    }
 }
 
 // ══════════════════════════════════════════
@@ -120,26 +79,13 @@ function setTodayStatus(r) {
     const attCard = document.getElementById('card-attendance');
     const payCard = document.getElementById('card-payment');
 
-    // Only show status if the record is from TODAY
-    const isToday = r && r.timestamp && (() => {
-        const recDate = new Date(r.timestamp);
-        const now     = new Date();
-        return recDate.getFullYear() === now.getFullYear() &&
-               recDate.getMonth()    === now.getMonth()    &&
-               recDate.getDate()     === now.getDate();
-    })();
-
-    if (!r || !isToday) {
+    if (!r) {
         setText('stat-attendance', 'NO DATA');
         setText('stat-attendance-sub', 'Not yet recorded for today');
         setText('stat-payment', 'NO DATA');
         setText('stat-payment-sub', 'No payment record today');
-        setText('stat-tax-ref', r ? r.tax_reference || '—' : '—');
-        setText('stat-stall-info', r
-            ? `${r.stall_area || '—'} · ${r.product_services || '—'}`
-            : 'Stall info unavailable');
-        if (attCard) attCard.className = 'stat-card';
-        if (payCard) payCard.className = 'stat-card';
+        setText('stat-tax-ref', '—');
+        setText('stat-stall-info', 'Stall info unavailable');
         return;
     }
 
@@ -171,28 +117,71 @@ function setTodayStatus(r) {
 }
 
 // ══════════════════════════════════════════
-// FIREBASE — Transaction history
+// TRANSACTION HISTORY
+// Today = Firebase (live), All/Past = Supabase
 // ══════════════════════════════════════════
 let allTxns = [];
+let supabaseTxns = [];
 
+// Load today's records from Firebase
 onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
-    if (!snapshot.exists()) { renderTxns([]); return; }
-    const all = Object.values(snapshot.val());
-    allTxns = all
-        .filter(v => String(v.vendor_id) === String(vendorId))
-        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    renderTxns(allTxns);
+    if (!snapshot.exists()) { allTxns = []; }
+    else {
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        allTxns = Object.values(snapshot.val())
+            .filter(v => String(v.vendor_id) === String(vendorId)
+                      && v.timestamp
+                      && new Date(v.timestamp).toLocaleDateString('en-CA') === todayStr)
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }
+    loadSupabaseTxns(); // also load historical
 });
+
+async function loadSupabaseTxns() {
+    const { data } = await supabase
+        .from('tax_dscrpt_summary')
+        .select('*')
+        .eq('vendor_id', parseInt(vendorId))
+        .not('tax_recorded', 'is', null)
+        .order('collection_date', { ascending: false });
+
+    supabaseTxns = (data || []).map(r => ({
+        _source:         'supabase',
+        vendor_id:       r.vendor_id,
+        vendor_name:     r.vendor_name,
+        timestamp:       new Date(r.collection_date + 'T08:00:00').getTime(),
+        collection_date: r.collection_date,
+        stall_area:      r.area,
+        product_services:r.product_services,
+        tax_reference:   r.amount_range,
+        has_paid:        true,
+        is_present:      true,
+        amount_paid:     r.tax_recorded,
+        officials_name:  r.officials_name,
+    }));
+
+    window.filterTransactions();
+}
 
 window.filterTransactions = function () {
     const val = document.getElementById('txn-filter')?.value || 'all';
-    const map = {
-        all:    allTxns,
-        paid:   allTxns.filter(v => v.has_paid),
-        unpaid: allTxns.filter(v => v.is_present && !v.has_paid),
-        absent: allTxns.filter(v => !v.is_present),
-    };
-    renderTxns(map[val] || allTxns);
+
+    let records;
+    if (val === 'today') {
+        records = allTxns;
+    } else {
+        // Merge Firebase today + Supabase history, deduplicate by date
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const supabaseExcludeToday = supabaseTxns.filter(r => r.collection_date !== todayStr);
+        records = [...allTxns, ...supabaseExcludeToday]
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }
+
+    if (val === 'paid')   records = records.filter(v => v.has_paid);
+    if (val === 'unpaid') records = records.filter(v => v.is_present && !v.has_paid);
+    if (val === 'absent') records = records.filter(v => !v.is_present);
+
+    renderTxns(records);
 };
 
 function renderTxns(records) {

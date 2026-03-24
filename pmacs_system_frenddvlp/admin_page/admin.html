@@ -45,7 +45,15 @@
     <div class="stats-row">
         <div class="stat-card insight-card">
             <div class="insight-label">TOTAL COLLECTED</div>
-            <div class="insight-value green" id="stat-total-money">₱0.00</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <div class="insight-value green" id="stat-total-money">₱0.00</div>
+                <button onclick="window.openReceipt()"
+                        style="background:#27ae60;color:white;border:none;border-radius:8px;
+                               padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;
+                               display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;">
+                    <i class="fa-solid fa-file-invoice"></i> RECEIPT
+                </button>
+            </div>
             <div class="insight-sub">
                 <span class="dot green"></span> Today: <strong id="legend-paid">₱0.00</strong>
                 &nbsp;&nbsp;
@@ -111,10 +119,16 @@
 
     <!-- ── Row 3: Pie charts ── -->
     <div class="stats-row">
+        <!-- Collection Rate with history -->
         <div class="stat-card">
             <div class="stat-header">
                 <div class="stat-icon money"><i class="fa-solid fa-peso-sign"></i></div>
                 <div class="stat-label">COLLECTION RATE</div>
+                <button onclick="window.openHistoryModal('collection')"
+                        style="margin-left:auto;background:none;border:1.5px solid #27ae60;color:#27ae60;
+                               border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">
+                    <i class="fa-solid fa-history"></i> HISTORY
+                </button>
             </div>
             <div class="stat-content">
                 <div class="pie-chart-container">
@@ -123,7 +137,7 @@
                         <circle class="pie-paid" cx="50" cy="50" r="40" id="pie-collected" style="stroke-dasharray:0 251.33;"></circle>
                         <circle cx="50" cy="50" r="40" id="pie-debt"
                                 fill="none" stroke="#f39c12" stroke-width="12" stroke-linecap="round"
-                                style="stroke-dasharray:0 251.33; stroke-dashoffset:0; transition:stroke-dasharray 0.8s ease, stroke-dashoffset 0.8s ease;"></circle>
+                                style="stroke-dasharray:0 251.33;stroke-dashoffset:0;transition:stroke-dasharray 0.8s ease,stroke-dashoffset 0.8s ease;"></circle>
                     </svg>
                     <div class="pie-center">
                         <span class="pie-value" id="pie-collected-label">0%</span>
@@ -137,10 +151,16 @@
             </div>
         </div>
 
+        <!-- Attendance with history -->
         <div class="stat-card">
             <div class="stat-header">
                 <div class="stat-icon attendance"><i class="fa-solid fa-users"></i></div>
                 <div class="stat-label">ATTENDANCE</div>
+                <button onclick="window.openHistoryModal('attendance')"
+                        style="margin-left:auto;background:none;border:1.5px solid #2971b9;color:#2971b9;
+                               border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">
+                    <i class="fa-solid fa-history"></i> HISTORY
+                </button>
             </div>
             <div class="stat-content">
                 <div class="pie-chart-container">
@@ -165,7 +185,7 @@
         <div class="chart-header">
             <div>
                 <div class="chart-title"><i class="fa-solid fa-bolt" style="margin-right:8px;"></i>RECENT ACTIVITY</div>
-                <div class="chart-sub">Latest system notifications</div>
+                <div class="chart-sub">Latest system notifications & collection status</div>
             </div>
         </div>
         <div class="notif-list" id="recent-activity-list">
@@ -174,6 +194,52 @@
     </div>
 
 </main>
+
+<!-- ── HISTORY MODAL ── -->
+<div id="historyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+    <div style="background:white;border-radius:16px;width:92%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+        <div id="historyModalHeader" style="background:#2971b9;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-size:16px;font-weight:800;letter-spacing:1px;" id="historyModalTitle">HISTORY</div>
+                <div style="font-size:12px;opacity:0.8;margin-top:2px;">Daily records from Supabase</div>
+            </div>
+            <button onclick="document.getElementById('historyModal').style.display='none'"
+                    style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">×</button>
+        </div>
+        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;">
+            <input type="date" id="historyDateSearch"
+                   style="flex:1;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"
+                   onchange="window.filterHistory()">
+            <button onclick="document.getElementById('historyDateSearch').value='';window.filterHistory()"
+                    style="background:#f1f5f9;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;color:#7f8c8d;cursor:pointer;">
+                CLEAR
+            </button>
+        </div>
+        <div id="historyList" style="overflow-y:auto;flex:1;padding:16px 20px;">
+            <p style="text-align:center;color:#94a3b8;">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ── RECEIPT MODAL ── -->
+<div id="receiptModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+    <div style="background:white;border-radius:16px;width:92%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+        <div style="background:#27ae60;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0;">
+            <div style="font-size:16px;font-weight:800;letter-spacing:1px;">COLLECTION RECEIPT</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button onclick="window.printReceipt()"
+                        style="background:white;color:#27ae60;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">
+                    <i class="fa-solid fa-print"></i> PRINT
+                </button>
+                <button onclick="document.getElementById('receiptModal').style.display='none'"
+                        style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">×</button>
+            </div>
+        </div>
+        <div id="receiptContent" style="padding:24px;font-family:'Courier New',monospace;">
+            Loading...
+        </div>
+    </div>
+</div>
 
 <script type="module" src="admin.js"></script>
 </body>

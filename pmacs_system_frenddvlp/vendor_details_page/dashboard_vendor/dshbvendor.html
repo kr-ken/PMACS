@@ -21,7 +21,7 @@
                 <span id="vendorNameText">Loading...</span>
             </span>
             <a href="#" onclick="window.handleLogout()">
-                <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+                <i class="fa-solid fa-sign-out-alt"></i> LOGOUT
             </a>
         </div>
     </div>
@@ -30,7 +30,7 @@
             DASHBOARD <i class="fa-solid fa-gauge"></i>
         </a>
         <a href="../vendors_page.html" class="menu-item">
-            MY PROFILE <i class="fa-solid fa-id-card"></i>
+            MY PROFILE <i class="fa-solid fa-address-card"></i>
         </a>
     </nav>
 </header>
@@ -83,7 +83,7 @@
             <div class="panel-header">
                 <div class="panel-title"><i class="fa-solid fa-store"></i> My Stall Information</div>
                 <a href="../vendors_page.html" class="btn-viewmore">
-                    <i class="fa-solid fa-external-link-alt"></i> View Full Profile
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> View Full Profile
                 </a>
             </div>
             <div class="info-grid" id="vendor-info-grid">
@@ -99,9 +99,10 @@
         <!-- ── Transaction History ── -->
         <div class="panel-card">
             <div class="panel-header">
-                <div class="panel-title"><i class="fa-solid fa-history"></i> Transaction History</div>
+                <div class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i> Transaction History</div>
                 <select id="txn-filter" class="filter-select" onchange="filterTransactions()">
                     <option value="all">All Records</option>
+                    <option value="today">Today Only</option>
                     <option value="paid">Paid Only</option>
                     <option value="unpaid">Unpaid Only</option>
                     <option value="absent">Absent Days</option>

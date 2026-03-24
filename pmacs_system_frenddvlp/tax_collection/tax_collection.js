@@ -19,9 +19,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 let allVendors      = [];
 let taxFeesLookup   = {};
-let cachedAmounts   = {};   // vendor_id → last tax_recorded from Supabase (past days only)
+let cachedAmounts   = {};
 let currentOfficial = null;
-const today         = new Date().toISOString().split('T')[0];
+const today         = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
 // ══════════════════════════════════════════
 // INIT
@@ -67,49 +67,38 @@ async function loadCollectorInfo() {
 window.handleLogout = () => { sessionStorage.clear(); window.location.href = '../login_page/login.html'; };
 
 // ══════════════════════════════════════════
-// TAX RATES — select area so area-keyed lookup works
+// TAX RATES
 // ══════════════════════════════════════════
 async function loadTaxRates() {
     const { data, error } = await supabase
         .from('collection_fees')
-        .select('area, product_services, amount_range, collection_fee_id');
+        .select('area, product_services, amount_range, collection_fee_id, "quantified?"');
     if (error) { console.error('loadTaxRates:', error.message); return; }
     (data || []).forEach(f => {
-        const e = { range: f.amount_range, id: f.collection_fee_id };
+        const e = { range: f.amount_range, id: f.collection_fee_id, quantified: f['quantified?'] };
         taxFeesLookup[f.product_services] = e;
         if (f.area) taxFeesLookup[`${f.area}:${f.product_services}`] = e;
     });
 }
 
 function getFee(vendor) {
-    // 1. Exact area:product match
     const areaKey = `${vendor.vendor_stall_area}:${vendor.product_services}`;
     if (taxFeesLookup[areaKey]) return taxFeesLookup[areaKey];
-
-    // 2. Exact product match
     if (taxFeesLookup[vendor.product_services]) return taxFeesLookup[vendor.product_services];
 
-    // 3. Word-level fuzzy match
-    // Split product name into meaningful words, ignore short connectors
     const words = s => s.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2);
     const vendorWords = words(vendor.product_services);
-
-    let bestEntry = null;
-    let bestScore = 0;
-
+    let bestEntry = null, bestScore = 0;
     for (const [key, entry] of Object.entries(taxFeesLookup)) {
-        if (key.includes(':')) continue; // skip area-keyed entries
+        if (key.includes(':')) continue;
         const keyWords = words(key);
-        // Count how many vendor words appear (as prefix) in key words
         let matches = 0;
         for (const vw of vendorWords) {
-            if (keyWords.some(kw => kw.startsWith(vw.slice(0, 4)) || vw.startsWith(kw.slice(0, 4)))) matches++;
+            if (keyWords.some(kw => kw.startsWith(vw.slice(0,4)) || vw.startsWith(kw.slice(0,4)))) matches++;
         }
         const score = matches / Math.max(vendorWords.length, keyWords.length);
         if (score > bestScore) { bestScore = score; bestEntry = entry; }
     }
-
-    // Accept if at least half the words matched
     if (bestScore >= 0.5) return bestEntry;
     return {};
 }
@@ -133,9 +122,7 @@ async function fetchVendors() {
 }
 
 // ══════════════════════════════════════════
-// PAST TAX from Supabase (past days only — not today)
-// Reference for absent: show last amount
-// Prefill for present: suggested amount (editable)
+// PAST TAX from Supabase (past days only)
 // ══════════════════════════════════════════
 async function loadCachedAmounts() {
     const since = new Date();
@@ -155,39 +142,48 @@ async function loadCachedAmounts() {
 
 // ══════════════════════════════════════════
 // RESTORE TODAY'S SESSION from Firebase
-// Skip records not timestamped today
+// Key format: vendor_id_YYYY-MM-DD
+// Filter by collection_date field
 // ══════════════════════════════════════════
 async function loadFirebaseState() {
     try {
         const snap = await get(ref(rtdb, 'vendor_realtime'));
         if (!snap.exists()) return;
-        const map      = snap.val();
-        const todayStr = new Date().toLocaleDateString('en-CA');
+
+        // Build lookup: vendor_id → today's record only
+        const todayMap = {};
+        snap.forEach(child => {
+            const d = child.val();
+            if (d.collection_date !== today) return; // skip other days
+            todayMap[String(d.vendor_id)] = d;
+        });
+
         allVendors = allVendors.map(v => {
-            const fb = map[String(v.vendor_id)];
+            const fb = todayMap[String(v.vendor_id)];
             if (!fb) return v;
-            const fbDate = fb.timestamp ? new Date(fb.timestamp).toLocaleDateString('en-CA') : null;
-            if (fbDate !== todayStr) return v;
             return { ...v, isPresent: !!fb.is_present, hasPaid: !!fb.has_paid, paidAmount: parseFloat(fb.amount_paid) || 0 };
         });
     } catch (e) { console.error("loadFirebaseState:", e.message); }
 }
 
 // ══════════════════════════════════════════
-// FIREBASE WRITE — always full record
+// FIREBASE WRITE
+// Key: vendor_id_YYYY-MM-DD → history accumulates per day
 // ══════════════════════════════════════════
 async function syncToFirebase(vendor) {
     const fee = getFee(vendor);
-    await set(ref(rtdb, `vendor_realtime/${vendor.vendor_id}`), {
+    const key = `${vendor.vendor_id}_${today}`;
+    await set(ref(rtdb, `vendor_realtime/${key}`), {
         vendor_id:        String(vendor.vendor_id),
         vendor_name:      vendor.vendor_name,
-        stall_area:       vendor.vendor_stall_area  || 'N/A',
+        stall_area:       vendor.vendor_stall_area || 'N/A',
         product_services: vendor.product_services,
         tax_reference:    fee.range || 'N/A',
         is_present:       !!vendor.isPresent,
         has_paid:         !!vendor.hasPaid,
         amount_paid:      parseFloat(vendor.paidAmount) || 0,
         timestamp:        Date.now(),
+        collection_date:  today,
     });
 }
 
@@ -197,6 +193,20 @@ async function syncToFirebase(vendor) {
 async function upsertToSupabase(vendor, paidAmount) {
     if (!currentOfficial) { console.warn('No collector — skipping upsert'); return; }
     const fee = getFee(vendor);
+
+    if (!fee.id) {
+        // No fee found — try updating the existing row's tax_recorded only
+        console.warn('upsertToSupabase: no fee id for', vendor.product_services);
+        const { error } = await supabase
+            .from('tax_dscrpt_summary')
+            .update({ tax_recorded: paidAmount, officials_id: currentOfficial.officials_id, officials_name: currentOfficial.officials_name })
+            .eq('vendor_id', vendor.vendor_id)
+            .eq('collection_date', today);
+        if (error) console.error('upsertToSupabase (update fallback):', error.message, error.details);
+        else cachedAmounts[vendor.vendor_id] = paidAmount;
+        return;
+    }
+
     const { error } = await supabase
         .from('tax_dscrpt_summary')
         .upsert({
@@ -207,24 +217,24 @@ async function upsertToSupabase(vendor, paidAmount) {
             area:                vendor.vendor_stall_area   || 'N/A',
             officials_id:        currentOfficial.officials_id,
             officials_name:      currentOfficial.officials_name,
-            collection_fee_id:   fee.id || 1,
+            collection_fee_id:   fee.id,
             product_services:    vendor.product_services,
             amount_range:        fee.range || 'N/A',
-            'quantified ?':      false,
+            'quantified ?':      fee.quantified || false,
             tax_recorded:        paidAmount,
             collection_date:     today,
         }, { onConflict: 'vendor_id,collection_date' });
-    if (error) console.error('upsertToSupabase:', vendor.vendor_name, error.message);
-    else cachedAmounts[vendor.vendor_id] = paidAmount;
+
+    if (error) {
+        console.error('upsertToSupabase ERROR:', error.message, '| hint:', error.hint);
+    } else {
+        cachedAmounts[vendor.vendor_id] = paidAmount;
+        console.log(`✓ Supabase: ${vendor.vendor_name} ₱${paidAmount} for ${today}`);
+    }
 }
 
 // ══════════════════════════════════════════
 // RENDER
-//
-// ABSENT  → disabled input (shows last Supabase amount as reference),
-//           no DONE button, "ABSENT" label
-// PRESENT → enabled input (range validated, last amount prefilled/editable),
-//           DONE PAYING button
 // ══════════════════════════════════════════
 function renderVendors() {
     const tbody = document.getElementById("vendor-list");
@@ -254,7 +264,7 @@ function renderVendors() {
 function buildRowHTML(v) {
     const fee   = getFee(v);
     const range = fee.range || '—';
-    const past  = cachedAmounts[v.vendor_id]; // last Supabase amount (past days)
+    const past  = cachedAmounts[v.vendor_id];
 
     // ── ABSENT ──
     if (!v.isPresent) {
@@ -272,9 +282,8 @@ function buildRowHTML(v) {
                 <input type="number" class="amt-input"
                        id="amt-${v.vendor_id}"
                        value="${past != null ? past : ''}"
-                       placeholder="—"
-                       disabled
-                       style="border:1.5px solid #e0e0e0; background:#f5f5f5; color:#aaa;">
+                       placeholder="—" disabled
+                       style="border:1.5px solid #e0e0e0;background:#f5f5f5;color:#aaa;">
                 <div style="font-size:11px;color:#aaa;margin-top:4px;">${pastLabel}</div>
             </td>
             <td class="center-col">
@@ -289,7 +298,6 @@ function buildRowHTML(v) {
     const nums      = (range || '').replace(/₱/g,'').match(/\d+(\.\d+)?/g);
     const unitPrice = nums ? parseFloat(nums[0]) : 0;
 
-    // ── QUANTIFIABLE: unit price (readonly) → qty → total ──
     const taxTd = isQuant && !isPaid ? `
         <td class="center-col" id="tax-cell-${v.vendor_id}">
             <div style="display:flex;flex-direction:column;gap:5px;max-width:220px;margin:0 auto;">
@@ -346,21 +354,19 @@ function buildRowHTML(v) {
                                <i class="fa-solid fa-ellipsis"></i>
                            </button>
                            <div id="dots-menu-${v.vendor_id}" style="
-                               display:none; position:absolute; right:0; top:110%;
-                               background:white; border:1px solid #e2e8f0; border-radius:10px;
-                               box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:200;
-                               min-width:170px; overflow:hidden;">
+                               display:none;position:absolute;right:0;top:110%;
+                               background:white;border:1px solid #e2e8f0;border-radius:10px;
+                               box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200;min-width:170px;overflow:hidden;">
                                <button onclick="window.showMissedPayments('${v.vendor_id}')" style="
-                                   width:100%; padding:11px 16px; text-align:left; border:none;
-                                   background:none; cursor:pointer; font-size:13px; font-weight:600;
-                                   color:#224263; display:flex; align-items:center; gap:8px;
-                                   border-bottom:1px solid #f1f5f9;">
+                                   width:100%;padding:11px 16px;text-align:left;border:none;
+                                   background:none;cursor:pointer;font-size:13px;font-weight:600;
+                                   color:#224263;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f1f5f9;">
                                    <i class="fa-solid fa-history" style="color:#f39c12;"></i> Missed Payments
                                </button>
                                <button onclick="window.unlockPayment('${v.vendor_id}')" style="
-                                   width:100%; padding:11px 16px; text-align:left; border:none;
-                                   background:none; cursor:pointer; font-size:13px; font-weight:600;
-                                   color:#224263; display:flex; align-items:center; gap:8px;">
+                                   width:100%;padding:11px 16px;text-align:left;border:none;
+                                   background:none;cursor:pointer;font-size:13px;font-weight:600;
+                                   color:#224263;display:flex;align-items:center;gap:8px;">
                                    <i class="fa-solid fa-pen" style="color:#3498db;"></i> Edit Payment
                                </button>
                            </div>
@@ -375,32 +381,20 @@ function buildRowHTML(v) {
 }
 
 // ══════════════════════════════════════════
-// QUANTIFIABLE: calculate total = unit × qty
-// enables DONE button only when total > 0
+// QUANTIFIABLE: unit × qty = total
 // ══════════════════════════════════════════
 window.calcTotal = (vendorId) => {
-    const unitEl  = document.getElementById(`unit-${vendorId}`);
-    const qtyEl   = document.getElementById(`qty-${vendorId}`);
+    const unit  = parseFloat(document.getElementById(`unit-${vendorId}`)?.value) || 0;
+    const qty   = parseFloat(document.getElementById(`qty-${vendorId}`)?.value)  || 0;
+    const total = parseFloat((unit * qty).toFixed(2));
     const totalEl = document.getElementById(`amt-${vendorId}`);
     const doneBtn = document.getElementById(`done-${vendorId}`);
-    if (!unitEl || !qtyEl || !totalEl) return;
-
-    const unit  = parseFloat(unitEl.value)  || 0;
-    const qty   = parseFloat(qtyEl.value)   || 0;
-    const total = parseFloat((unit * qty).toFixed(2));
-
-    totalEl.value = total > 0 ? total : '';
-    totalEl.style.borderColor = total > 0 ? '#27ae60' : '#e0e0e0';
-
-    if (doneBtn) {
-        doneBtn.disabled = total <= 0;
-        doneBtn.style.opacity  = total > 0 ? '1' : '0.5';
-        doneBtn.style.cursor   = total > 0 ? 'pointer' : 'not-allowed';
-    }
+    if (totalEl) { totalEl.value = total > 0 ? total : ''; totalEl.style.borderColor = total > 0 ? '#27ae60' : '#e0e0e0'; }
+    if (doneBtn) { doneBtn.disabled = total <= 0; doneBtn.style.opacity = total > 0 ? '1' : '0.5'; doneBtn.style.cursor = total > 0 ? 'pointer' : 'not-allowed'; }
 };
 
 // ══════════════════════════════════════════
-// CHECKBOX LISTENER — re-renders only that row
+// CHECKBOX LISTENER
 // ══════════════════════════════════════════
 function attachCheckboxListeners() {
     document.querySelectorAll(".attendance-checkbox").forEach(cb => {
@@ -411,8 +405,8 @@ function attachCheckboxListeners() {
             vendor.isPresent = e.target.checked;
             if (!vendor.isPresent) { vendor.hasPaid = false; vendor.paidAmount = 0; }
             const row = document.getElementById(`row-${id}`);
-            if (row) { row.innerHTML = buildRowHTML(vendor); }
-            attachCheckboxListeners(); // re-attach after re-render
+            if (row) row.innerHTML = buildRowHTML(vendor);
+            attachCheckboxListeners();
             await syncToFirebase(vendor);
         };
     });
@@ -427,36 +421,25 @@ window.validateRange = (vendorId, rangeStr) => {
     if (!input) return;
     const val  = parseFloat(input.value);
     const nums = rangeStr.match(/\d+(\.\d+)?/g);
-    if (!nums || isNaN(val)) {
-        input.style.border = "1.5px solid #ddd";
-        if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
-        return;
-    }
+    if (!nums || isNaN(val)) { input.style.border = "1.5px solid #ddd"; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return; }
     const min = parseFloat(nums[0]);
     const max = nums[1] ? parseFloat(nums[1]) : min;
-    if (val < min || val > max) {
-        input.style.border = "2.5px solid #e74c3c";
-        if (btn) { btn.disabled = true; btn.style.opacity = "0.5"; }
-    } else {
-        input.style.border = "2.5px solid #27ae60";
-        if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
-    }
+    if (val < min || val > max) { input.style.border = "2.5px solid #e74c3c"; if (btn) { btn.disabled = true; btn.style.opacity = "0.5"; } }
+    else { input.style.border = "2.5px solid #27ae60"; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } }
 };
 
 // ══════════════════════════════════════════
-// MARK AS PAID — writes to Firebase + Supabase immediately
+// MARK AS PAID
 // ══════════════════════════════════════════
 window.markAsPaid = async (vendorId) => {
     const input      = document.getElementById(`amt-${vendorId}`);
     const paidAmount = parseFloat(input?.value) || 0;
     if (paidAmount <= 0) { showNotif("Please enter a valid amount", "error"); return; }
-
     const vendor = allVendors.find(v => String(v.vendor_id) === String(vendorId));
     if (!vendor) return;
-    vendor.hasPaid    = true;
-    vendor.paidAmount = paidAmount;
-
+    vendor.hasPaid = true; vendor.paidAmount = paidAmount;
     if (input) { input.disabled = true; input.classList.add('paid-border'); input.style.border = "2.5px solid #3498db"; }
+
     const ac = document.getElementById(`action-container-${vendorId}`);
     if (ac) ac.innerHTML = `
         <div class="dots-menu-wrap" style="position:relative;display:inline-block;">
@@ -464,28 +447,18 @@ window.markAsPaid = async (vendorId) => {
                     onclick="window.toggleDotsMenu('${vendorId}')" title="Options">
                 <i class="fa-solid fa-ellipsis"></i>
             </button>
-            <div id="dots-menu-${vendorId}" style="
-                display:none; position:absolute; right:0; top:110%;
-                background:white; border:1px solid #e2e8f0; border-radius:10px;
-                box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:200;
-                min-width:170px; overflow:hidden;">
-                <button onclick="window.showMissedPayments('${vendorId}')" style="
-                    width:100%; padding:11px 16px; text-align:left; border:none;
-                    background:none; cursor:pointer; font-size:13px; font-weight:600;
-                    color:#224263; display:flex; align-items:center; gap:8px;
-                    border-bottom:1px solid #f1f5f9;">
+            <div id="dots-menu-${vendorId}" style="display:none;position:absolute;right:0;top:110%;
+                background:white;border:1px solid #e2e8f0;border-radius:10px;
+                box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200;min-width:170px;overflow:hidden;">
+                <button onclick="window.showMissedPayments('${vendorId}')" style="width:100%;padding:11px 16px;text-align:left;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#224263;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f1f5f9;">
                     <i class="fa-solid fa-history" style="color:#f39c12;"></i> Missed Payments
                 </button>
-                <button onclick="window.unlockPayment('${vendorId}')" style="
-                    width:100%; padding:11px 16px; text-align:left; border:none;
-                    background:none; cursor:pointer; font-size:13px; font-weight:600;
-                    color:#224263; display:flex; align-items:center; gap:8px;">
+                <button onclick="window.unlockPayment('${vendorId}')" style="width:100%;padding:11px 16px;text-align:left;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#224263;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-pen" style="color:#3498db;"></i> Edit Payment
                 </button>
             </div>
         </div>`;
 
-    // Update sub-line
     const sub = input?.parentElement?.querySelector('div[style*="font-size:11px"]');
     if (sub) sub.innerHTML = `<span style="color:#3498db;">✓ Paid ₱${paidAmount}</span>`;
 
@@ -495,12 +468,10 @@ window.markAsPaid = async (vendorId) => {
 };
 
 // ══════════════════════════════════════════
-// DOTS MENU TOGGLE
+// DOTS MENU
 // ══════════════════════════════════════════
 window.toggleDotsMenu = (vendorId) => {
-    document.querySelectorAll('[id^="dots-menu-"]').forEach(m => {
-        if (m.id !== `dots-menu-${vendorId}`) m.style.display = 'none';
-    });
+    document.querySelectorAll('[id^="dots-menu-"]').forEach(m => { if (m.id !== `dots-menu-${vendorId}`) m.style.display = 'none'; });
     const menu = document.getElementById(`dots-menu-${vendorId}`);
     if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 };
@@ -510,14 +481,13 @@ document.addEventListener('click', (e) => {
 });
 
 // ══════════════════════════════════════════
-// MISSED PAYMENTS — show debt list below vendor row
+// MISSED PAYMENTS
 // ══════════════════════════════════════════
 window.showMissedPayments = async (vendorId) => {
-    document.getElementById(`dots-menu-${vendorId}`)?.style && (document.getElementById(`dots-menu-${vendorId}`).style.display = 'none');
+    const menuEl = document.getElementById(`dots-menu-${vendorId}`);
+    if (menuEl) menuEl.style.display = 'none';
     const vendor = allVendors.find(v => String(v.vendor_id) === String(vendorId));
     if (!vendor) return;
-
-    // Toggle: already showing → hide
     const existing = document.getElementById(`debt-row-${vendorId}`);
     if (existing) { existing.remove(); return; }
 
@@ -530,10 +500,8 @@ window.showMissedPayments = async (vendorId) => {
         .order('collection_date', { ascending: false });
 
     if (error) { console.error('showMissedPayments:', error.message); return; }
-
     const row = document.getElementById(`row-${vendorId}`);
     if (!row) return;
-
     const debtRow = document.createElement('tr');
     debtRow.id = `debt-row-${vendorId}`;
 
@@ -549,8 +517,7 @@ window.showMissedPayments = async (vendorId) => {
                 .toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
             const displayRange = r.amount_range || fee.range || 'N/A';
             return `<div data-debt-date="${r.collection_date}" style="display:flex;flex-direction:column;
-                padding:10px 14px;background:white;border-radius:8px;
-                border:1px solid #fed7aa;margin-bottom:8px;">
+                padding:10px 14px;background:white;border-radius:8px;border:1px solid #fed7aa;margin-bottom:8px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div>
                         <div style="font-weight:700;font-size:13px;color:#224263;">${dateLabel}</div>
@@ -563,102 +530,63 @@ window.showMissedPayments = async (vendorId) => {
                 </div>
             </div>`;
         }).join('');
-
         debtRow.innerHTML = `<td colspan="5" style="background:#fff8f0;padding:16px 24px;border-left:4px solid #f39c12;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
                 <i class="fa-solid fa-history" style="color:#f39c12;"></i>
-                <span style="font-weight:800;font-size:13px;color:#224263;">
-                    MISSED PAYMENTS — ${vendor.vendor_name.toUpperCase()}
-                </span>
-                <span style="background:#f39c12;color:white;font-size:10px;font-weight:700;
-                             padding:2px 8px;border-radius:20px;letter-spacing:1px;">
-                    ${data.length} UNPAID
-                </span>
-            </div>
-            ${listItems}
-        </td>`;
+                <span style="font-weight:800;font-size:13px;color:#224263;">MISSED PAYMENTS — ${vendor.vendor_name.toUpperCase()}</span>
+                <span style="background:#f39c12;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">${data.length} UNPAID</span>
+            </div>${listItems}</td>`;
     }
     row.insertAdjacentElement('afterend', debtRow);
 };
 
 // ══════════════════════════════════════════
-// PAY MISSED DEBT — inline input, no popup
+// PAY MISSED DEBT — inline
 // ══════════════════════════════════════════
 window.payMissed = async (vendorId, collectionDate, rangeStr) => {
     const inputRowId = `pay-input-${vendorId}-${collectionDate.replace(/-/g,'')}`;
-
-    // Toggle: if already open, close it
     const existing = document.getElementById(inputRowId);
     if (existing) { existing.remove(); return; }
-
-    // Close any other open pay-input rows for this vendor
     document.querySelectorAll(`[id^="pay-input-${vendorId}-"]`).forEach(el => el.remove());
 
     const nums   = String(rangeStr).replace(/₱/g,'').match(/\d+(\.\d+)?/g);
     const minVal = nums ? parseFloat(nums[0]) : 0;
     const maxVal = nums && nums[1] ? parseFloat(nums[1]) : minVal;
 
-    // Find the PAY DEBT button's parent div and insert after it
     const debtRow = document.getElementById(`debt-row-${vendorId}`);
     if (!debtRow) return;
 
-    // Find the specific date entry div inside the debt row
-    const allEntries = debtRow.querySelectorAll('div[style*="border:1px solid #fed7aa"]');
+    const allEntries = debtRow.querySelectorAll('[data-debt-date]');
     let targetEntry = null;
-    allEntries.forEach(el => {
-        if (el.textContent.includes(collectionDate.replace(/-/g, ''))) return;
-        // match by the date label text
-        const btn = el.querySelector('button');
-        if (btn && btn.getAttribute('onclick')?.includes(collectionDate)) targetEntry = el;
-    });
+    allEntries.forEach(el => { if (el.dataset.debtDate === collectionDate) targetEntry = el; });
 
-    // Build inline pay form
     const payForm = document.createElement('div');
     payForm.id = inputRowId;
-    payForm.style.cssText = `
-        background:#fffbf0; border:1.5px solid #f39c12; border-radius:8px;
-        padding:12px 14px; margin-bottom:8px;
-        animation: slideDown 0.2s ease-out;
-    `;
+    payForm.style.cssText = `background:#fffbf0;border:1.5px solid #f39c12;border-radius:8px;padding:12px 14px;margin-bottom:8px;`;
     payForm.innerHTML = `
-        <style>#${inputRowId} { animation: slideDown 0.2s ease-out; }
-        @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }</style>
         <div style="font-size:12px;font-weight:700;color:#224263;margin-bottom:8px;">
-            <span style="color:#f39c12;font-weight:700;">₱</span>
-            Enter amount for <strong>${collectionDate}</strong> &nbsp;·&nbsp;
-            <span style="color:#7f8c8d;">Range: ${rangeStr}</span>
+            <span style="color:#f39c12;">₱</span> Enter amount for <strong>${collectionDate}</strong>
+            &nbsp;·&nbsp;<span style="color:#7f8c8d;">Range: ${rangeStr}</span>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
             <input type="number" id="pay-amt-${vendorId}-${collectionDate.replace(/-/g,'')}"
                    step="0.01" min="${minVal}" max="${maxVal > 0 ? maxVal : ''}"
                    placeholder="${minVal > 0 ? minVal : '0.00'}"
-                   style="flex:1;padding:9px 12px;border:1.5px solid #f39c12;border-radius:7px;
-                          font-size:14px;font-weight:600;outline:none;">
+                   style="flex:1;padding:9px 12px;border:1.5px solid #f39c12;border-radius:7px;font-size:14px;font-weight:600;outline:none;">
             <button onclick="window.confirmPayMissed('${vendorId}','${collectionDate}','${rangeStr}')"
-                    style="background:#f39c12;color:white;border:none;border-radius:7px;
-                           padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;
-                           display:flex;align-items:center;gap:6px;white-space:nowrap;">
+                    style="background:#f39c12;color:white;border:none;border-radius:7px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
                 <i class="fa-solid fa-check"></i> Confirm
             </button>
             <button onclick="document.getElementById('${inputRowId}').remove()"
-                    style="background:#f1f5f9;color:#7f8c8d;border:none;border-radius:7px;
-                           padding:9px 12px;font-weight:700;font-size:13px;cursor:pointer;">
+                    style="background:#f1f5f9;color:#7f8c8d;border:none;border-radius:7px;padding:9px 12px;font-weight:700;font-size:13px;cursor:pointer;">
                 Cancel
             </button>
         </div>
         <div id="pay-amt-err-${vendorId}-${collectionDate.replace(/-/g,'')}"
-             style="font-size:11px;color:#e74c3c;margin-top:4px;display:none;"></div>
-    `;
+             style="font-size:11px;color:#e74c3c;margin-top:4px;display:none;"></div>`;
 
-    // Insert after the matching button's parent entry, or at end of debt area
-    if (targetEntry) {
-        targetEntry.insertAdjacentElement('afterend', payForm);
-    } else {
-        // fallback: append inside the debt row's td
-        debtRow.querySelector('td').appendChild(payForm);
-    }
-
-    // Focus the input
+    if (targetEntry) targetEntry.insertAdjacentElement('afterend', payForm);
+    else debtRow.querySelector('td').appendChild(payForm);
     document.getElementById(`pay-amt-${vendorId}-${collectionDate.replace(/-/g,'')}`)?.focus();
 };
 
@@ -667,89 +595,53 @@ window.confirmPayMissed = async (vendorId, collectionDate, rangeStr) => {
     const input  = document.getElementById(`pay-amt-${key}`);
     const errEl  = document.getElementById(`pay-amt-err-${key}`);
     if (!input) return;
-
     const amount = parseFloat(input.value);
     const nums   = String(rangeStr).replace(/₱/g,'').match(/\d+(\.\d+)?/g);
     const minVal = nums ? parseFloat(nums[0]) : 0;
     const maxVal = nums && nums[1] ? parseFloat(nums[1]) : minVal;
 
-    // Validate
-    if (!amount || amount <= 0) {
-        if (errEl) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = 'block'; }
-        input.style.borderColor = '#e74c3c';
-        return;
-    }
-    if (maxVal > 0 && (amount < minVal || amount > maxVal)) {
-        if (errEl) { errEl.textContent = `Amount must be between ₱${minVal} and ₱${maxVal}.`; errEl.style.display = 'block'; }
-        input.style.borderColor = '#e74c3c';
-        return;
-    }
-
+    if (!amount || amount <= 0) { if (errEl) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = 'block'; } input.style.borderColor = '#e74c3c'; return; }
+    if (maxVal > 0 && (amount < minVal || amount > maxVal)) { if (errEl) { errEl.textContent = `Amount must be between ₱${minVal} and ₱${maxVal}.`; errEl.style.display = 'block'; } input.style.borderColor = '#e74c3c'; return; }
     if (!currentOfficial) { showNotif('No collector info — please re-login.', 'error'); return; }
+
     const vendor = allVendors.find(v => String(v.vendor_id) === String(vendorId));
     if (!vendor) return;
     const fee = getFee(vendor);
 
-    // Try UPDATE first (row exists from original collection day)
-    // Only update tax_recorded + officials info — preserves existing FK fields
-    const { data: existing } = await supabase
+    const { data: existingRow } = await supabase
         .from('tax_dscrpt_summary')
-        .select('tax_dscrpt_id, collection_fee_id')
+        .select('tax_dscrpt_id')
         .eq('vendor_id', vendor.vendor_id)
         .eq('collection_date', collectionDate)
         .maybeSingle();
 
     let dbError;
-
-    if (existing) {
-        // Row exists — just update tax_recorded and who collected it
+    if (existingRow) {
         const { error } = await supabase
             .from('tax_dscrpt_summary')
-            .update({
-                tax_recorded:   amount,
-                officials_id:   currentOfficial.officials_id,
-                officials_name: currentOfficial.officials_name,
-                amount_range:   rangeStr,
-            })
-            .eq('tax_dscrpt_id', existing.tax_dscrpt_id);
+            .update({ tax_recorded: amount, officials_id: currentOfficial.officials_id, officials_name: currentOfficial.officials_name, amount_range: rangeStr })
+            .eq('tax_dscrpt_id', existingRow.tax_dscrpt_id);
         dbError = error;
     } else {
-        // Row doesn't exist — insert with all required fields
         const { error } = await supabase
             .from('tax_dscrpt_summary')
-            .insert({
-                vendor_id:           vendor.vendor_id,
-                vendor_name:         vendor.vendor_name,
-                vendor_stall_name:   vendor.vendor_stall_name   || vendor.vendor_stall_area || 'N/A',
-                vendor_stall_number: vendor.vendor_stall_number || 0,
-                area:                vendor.vendor_stall_area   || 'N/A',
-                officials_id:        currentOfficial.officials_id,
-                officials_name:      currentOfficial.officials_name,
-                collection_fee_id:   fee.id,
-                product_services:    vendor.product_services,
-                amount_range:        rangeStr,
-                'quantified ?':      false,
-                tax_recorded:        amount,
-                collection_date:     collectionDate,
-            });
+            .insert({ vendor_id: vendor.vendor_id, vendor_name: vendor.vendor_name, vendor_stall_name: vendor.vendor_stall_name || vendor.vendor_stall_area || 'N/A', vendor_stall_number: vendor.vendor_stall_number || 0, area: vendor.vendor_stall_area || 'N/A', officials_id: currentOfficial.officials_id, officials_name: currentOfficial.officials_name, collection_fee_id: fee.id, product_services: vendor.product_services, amount_range: rangeStr, 'quantified ?': false, tax_recorded: amount, collection_date: collectionDate });
         dbError = error;
     }
 
-    if (dbError) { console.error('confirmPayMissed:', dbError.message); showNotif('Failed to record payment: ' + dbError.message, 'error'); return; }
-
+    if (dbError) { console.error('confirmPayMissed:', dbError.message); showNotif('Failed: ' + dbError.message, 'error'); return; }
     showNotif(`✓ Debt ₱${amount} paid for ${collectionDate}`, 'success');
     document.getElementById(`debt-row-${vendorId}`)?.remove();
     window.showMissedPayments(vendorId);
 };
 
 // ══════════════════════════════════════════
-// UNLOCK PAYMENT — revert to editable
+// UNLOCK PAYMENT
 // ══════════════════════════════════════════
 window.unlockPayment = async (vendorId) => {
     const vendor = allVendors.find(v => String(v.vendor_id) === String(vendorId));
     if (!vendor) return;
-    vendor.hasPaid    = false;
-    vendor.paidAmount = 0;
+    vendor.hasPaid = false; vendor.paidAmount = 0;
     const input = document.getElementById(`amt-${vendorId}`);
     if (input) { input.disabled = false; input.classList.remove('paid-border'); input.style.border = "2px solid #ddd"; }
     const ac = document.getElementById(`action-container-${vendorId}`);
@@ -759,7 +651,7 @@ window.unlockPayment = async (vendorId) => {
 };
 
 // ══════════════════════════════════════════
-// FINISH & UPLOAD — syncs all to Firebase, paid to Supabase
+// FINISH & UPLOAD
 // ══════════════════════════════════════════
 window.finishAndUpload = async () => {
     const unpaid = allVendors.filter(v => v.isPresent && !v.hasPaid);
@@ -767,9 +659,7 @@ window.finishAndUpload = async () => {
         const el = document.getElementById('confirmMessage');
         if (el) el.textContent = `${unpaid.length} present vendor${unpaid.length > 1 ? 's have' : ' has'} not paid yet.`;
         document.getElementById('confirmModalOverlay').style.display = 'flex';
-    } else {
-        await executeUpload();
-    }
+    } else { await executeUpload(); }
 };
 
 window.confirmUpload = async (proceed) => {
@@ -800,28 +690,18 @@ async function loadModalFees() {
     const { data } = await supabase.from('collection_fees').select('*').order('area', { ascending: true });
     if (!data) return;
     body.innerHTML = "";
-
-    // Group by area and render with separator rows
     let lastArea = null;
     data.forEach(f => {
-        // Area separator
         if (f.area !== lastArea) {
             lastArea = f.area;
             const sep = document.createElement('tr');
             sep.style.cssText = "background:#2971b9;";
-            sep.innerHTML = `<td colspan="3" style="color:white;font-weight:800;font-size:12px;letter-spacing:1px;padding:10px 20px;text-transform:uppercase;">
-                <i class="fa-solid fa-building" style="margin-right:8px;"></i>${f.area}
-            </td>`;
+            sep.innerHTML = `<td colspan="3" style="color:white;font-weight:800;font-size:12px;letter-spacing:1px;padding:10px 20px;text-transform:uppercase;"><i class="fa-solid fa-building" style="margin-right:8px;"></i>${f.area}</td>`;
             body.appendChild(sep);
         }
-        // Fee row — fix: column is 'quantified?' (no space)
         const isQuantified = f['quantified?'] === true || f['quantified ?'] === true;
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="padding-left:28px;">${f.product_services}</td>
-            <td style="font-weight:700;">${f.amount_range}</td>
-            <td class="center-col">${isQuantified ? '<span style="color:#27ae60;font-weight:700;">✅ YES</span>' : '<span style="color:#95a5a6;">—</span>'}</td>
-        `;
+        tr.innerHTML = `<td style="padding-left:28px;">${f.product_services}</td><td style="font-weight:700;">${f.amount_range}</td><td class="center-col">${isQuantified ? '<span style="color:#27ae60;font-weight:700;">✅ YES</span>' : '<span style="color:#95a5a6;">—</span>'}</td>`;
         body.appendChild(tr);
     });
 }

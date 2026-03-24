@@ -30,11 +30,11 @@ if (dateEl) {
     dateEl.textContent = new Date().toLocaleDateString("en-US", options).toUpperCase();
 }
 
-// ── Admin name ──
-const adminNameEl = document.getElementById("adminName");
-if (adminNameEl) {
+// ── Collector name ──
+const collectorEl = document.getElementById("collectorName");
+if (collectorEl) {
     const name = sessionStorage.getItem('pmacs_name');
-    if (name) adminNameEl.innerHTML = `<i class="fa-solid fa-user-shield"></i> ${name}`;
+    if (name) collectorEl.innerHTML = `<i class="fa-solid fa-user-tie" style="margin-right:6px;"></i>${name}`;
 }
 
 // ── Logout ──
@@ -62,19 +62,23 @@ window.switchTab = (tab) => {
 
 // ── RTDB: live today stats ──
 onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
-    const todayStr = new Date().toLocaleDateString('en-CA');
+    if (!snapshot.exists()) {
+        setText("stat-total-money", "₱0.00");
+        setText("legend-paid", "₱0.00");
+        setText("legend-unpaid", "₱0.00");
+        setText("stat-pending", 0);
+        setText("stat-collected", 0);
+        setText("stat-attendance", "0%");
+        setText("legend-present", 0);
+        setText("legend-absent", "0 (₱0.00 Dues)");
+        return;
+    }
 
-    if (!snapshot.exists()) { resetStats(); return; }
-
-    const vendors = Object.values(snapshot.val()).filter(v =>
-        v.timestamp && new Date(v.timestamp).toLocaleDateString('en-CA') === todayStr
-    );
-
-    if (!vendors.length) { resetStats(); return; }
-
+    const vendors = Object.values(snapshot.val());
     let totalCollected = 0, totalToCollect = 0;
     let paidCount = 0, unpaidCount = 0;
     let presentCount = 0, absentCount = 0, totalAbsentDues = 0;
+    const totalVendors = vendors.length;
 
     vendors.forEach(v => {
         if (v.is_present) {
@@ -87,132 +91,28 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
         }
     });
 
-    const totalVendors   = vendors.length;
     const totalPotential = totalCollected + totalToCollect;
-    const collectedPct   = totalPotential > 0 ? (totalCollected / totalPotential) * 100 : 0;
-    const attendancePct  = totalVendors   > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
+    const collectedPct = totalPotential > 0 ? (totalCollected / totalPotential) * 100 : 0;
+    const attendancePct = totalVendors > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
 
-    window._todayStats = { totalCollected, totalToCollect, collectedPct, paidCount, unpaidCount, presentCount, absentCount, totalAbsentDues, attendancePct };
-    renderStats(window._todayStats);
-    loadDebtPayments(); // also fetch today's cleared debts from Supabase
+    setText("stat-total-money", `₱${totalCollected.toFixed(2)}`);
+    setText("legend-paid",      `₱${totalCollected.toFixed(2)}`);
+    setText("legend-unpaid",    `₱${totalToCollect.toFixed(2)}`);
+    updatePie("pie-collected", collectedPct);
 
-}, (err) => console.error('[Admin] RTDB error:', err.message));
+    setText("stat-pending",   unpaidCount);
+    setText("stat-collected", paidCount);
+    setText("stat-attendance",  `${attendancePct}%`);
+    setText("legend-present",   presentCount);
+    setText("legend-absent",    `${absentCount} (₱${totalAbsentDues.toFixed(2)} Dues)`);
+    updatePie("pie-attendance", attendancePct);
 
-// ── Supabase: debt payments cleared today (past dates paid today) ──
-async function loadDebtPayments() {
-    // Debt payments = Supabase rows with collection_date < today but tax_recorded IS NOT NULL
-    // We can't easily know "paid today" without a paid_at timestamp,
-    // so we show total cleared debts (non-null past records) as a yellow indicator
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const { data } = await supabase
-        .from('tax_dscrpt_summary')
-        .select('tax_recorded, collection_date')
-        .lt('collection_date', todayStr)
-        .not('tax_recorded', 'is', null);
+    // Update vendor paid/unpaid chart card
+    setText("card-paid-count",   paidCount);
+    setText("card-unpaid-count", unpaidCount);
+    updateMiniBar(paidCount, unpaidCount);
 
-    if (!data) return;
-    const debtTotal = data.reduce((sum, r) => sum + (parseFloat(r.tax_recorded) || 0), 0);
-    const debtCount = data.length;
-
-    setText('legend-debt',       `₱${debtTotal.toFixed(2)}`);
-    setText('legend-debt-count', `${debtCount} cleared`);
-
-    // Update pie: add debt as yellow segment on collection rate
-    const s = window._todayStats || {};
-    const todayCollected = s.totalCollected || 0;
-    const todayUnpaid    = s.totalToCollect  || 0;
-    const grandTotal     = todayCollected + todayUnpaid + debtTotal;
-    const todayPct       = grandTotal > 0 ? (todayCollected / grandTotal) * 100 : 0;
-    const debtPct        = grandTotal > 0 ? (debtTotal      / grandTotal) * 100 : 0;
-    updatePieThree('pie-collected', 'pie-debt', todayPct, debtPct);
-
-    setText('stat-total-money', `₱${(todayCollected + debtTotal).toFixed(2)}`);
-}
-
-function renderStats(s) {
-    setText("stat-total-money",    `₱${s.totalCollected.toFixed(2)}`);
-    setText("legend-paid",         `₱${s.totalCollected.toFixed(2)}`);
-    setText("legend-unpaid",       `₱${s.totalToCollect.toFixed(2)}`);
-    setText("pie-collected-label", `${Math.round(s.collectedPct)}%`);
-    updatePie("pie-collected", s.collectedPct);
-    setText("stat-pending",        s.unpaidCount);
-    setText("stat-collected",      s.paidCount);
-    setText("card-paid-count",     s.paidCount);
-    setText("card-unpaid-count",   s.unpaidCount);
-    setText("stat-attendance",     `${s.attendancePct}%`);
-    setText("legend-present",      s.presentCount);
-    setText("legend-absent",       `${s.absentCount} (₱${s.totalAbsentDues.toFixed(2)} Dues)`);
-    setText("pie-attendance-label",`${s.attendancePct}%`);
-    setText("legend-present-pie",  s.presentCount);
-    setText("legend-absent-pie",   s.absentCount);
-    updatePie("pie-attendance", s.attendancePct);
-    updateMiniBar(s.paidCount, s.unpaidCount);
-}
-
-function resetStats() {
-    ["stat-total-money","legend-paid","legend-unpaid"].forEach(id => setText(id, "₱0.00"));
-    setText("legend-debt", "₱0.00");
-    setText("legend-debt-count", "0 cleared");
-    ["stat-pending","stat-collected","card-paid-count","card-unpaid-count",
-     "legend-present","legend-absent-pie","legend-present-pie"].forEach(id => setText(id, "0"));
-    setText("stat-attendance", "0%");
-    setText("pie-collected-label", "0%");
-    setText("pie-attendance-label", "0%");
-    setText("legend-absent", "0 (₱0.00 Dues)");
-    updatePie("pie-collected", 0);
-    updatePie("pie-attendance", 0);
-    updateMiniBar(0, 0);
-    window._todayStats = null;
-    loadDebtPayments();
-}
-
-// Two-arc pie for collection: green (today paid) + yellow (debt cleared)
-function updatePieThree(greenId, yellowId, greenPct, yellowPct) {
-    const greenEl  = document.getElementById(greenId);
-    const yellowEl = document.getElementById(yellowId);
-    if (greenEl)  greenEl.style.strokeDasharray  = `${(greenPct  / 100) * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
-    if (yellowEl) {
-        // Yellow arc starts after green arc
-        const greenLen = (greenPct / 100) * CIRCUMFERENCE;
-        yellowEl.style.strokeDasharray  = `${(yellowPct / 100) * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
-        yellowEl.style.strokeDashoffset = `-${greenLen}`;
-    }
-}
-
-// ── RTDB: recent activity from Firebase notifications ──
-onValue(ref(rtdb, 'notifications'), (snapshot) => {
-    const listEl = document.getElementById('recent-activity-list');
-    if (!listEl) return;
-
-    if (!snapshot.exists()) {
-        listEl.innerHTML = `<div class="notif-card"><div class="notif-info"><p style="color:#7f8c8d;">No recent activity.</p></div></div>`;
-        return;
-    }
-
-    const items = [];
-    snapshot.forEach(c => items.push(c.val()));
-    items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    const recent = items.slice(0, 5);
-
-    const colorMap = { info:'#2971b9', success:'#27ae60', warning:'#f39c12', error:'#e74c3c' };
-    const iconMap  = { info:'fa-info-circle', success:'fa-check-circle', warning:'fa-triangle-exclamation', error:'fa-circle-xmark' };
-
-    listEl.innerHTML = recent.map(n => {
-        const color = colorMap[n.type] || '#2971b9';
-        const icon  = iconMap[n.type]  || 'fa-bell';
-        const time  = n.createdAt ? new Date(n.createdAt).toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' }) : '—';
-        return `<div class="notif-card ${n.read ? '' : 'unread'}" style="border-left:4px solid ${color};">
-            <div class="notif-info">
-                <p style="font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:8px;">
-                    <i class="fa-solid ${icon}" style="color:${color};"></i>
-                    ${n.title || 'Notification'}
-                </p>
-                <p style="color:#7f8c8d;font-size:13px;">${n.message || ''}</p>
-                <span style="font-size:11px;color:#95a5a6;">${time}</span>
-            </div>
-        </div>`;
-    }).join('');
-});
+}, (err) => console.error('[Dashboard] RTDB error:', err.message));
 
 // ── Supabase: historical chart data ──
 async function loadChartData(tab) {
@@ -229,7 +129,12 @@ async function loadChartData(tab) {
             d.setDate(today.getDate() - i);
             labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
         }
-        groupFn = (date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        // Timezone-safe: parse date string directly, not via UTC new Date()
+        groupFn = (dateStr) => {
+            const [y, m, d] = dateStr.split('-');
+            return new Date(+y, +m - 1, +d)
+                .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        };
 
     } else if (tab === 'weekly') {
         // Last 6 weeks
@@ -259,13 +164,18 @@ async function loadChartData(tab) {
             d.setMonth(today.getMonth() - i);
             labels.push(d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
         }
-        groupFn = (date) => new Date(date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        groupFn = (dateStr) => {
+            const [y, m, d] = dateStr.split('-');
+            return new Date(+y, +m - 1, +d)
+                .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        };
     }
 
     const { data, error } = await supabase
         .from('tax_dscrpt_summary')
         .select('collection_date, tax_recorded')
         .gte('collection_date', startDate.toISOString().split('T')[0])
+        .not('tax_recorded', 'is', null)   // only paid records
         .order('collection_date', { ascending: true });
 
     if (error) { console.error('loadChartData:', error.message); return; }
@@ -289,6 +199,13 @@ function renderChart(labels, data) {
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
     const hasData = data.some(v => v > 0);
+
+    // Smart Y-axis: peak × 1.6, rounded up to nearest nice interval
+    const peak = Math.max(...data, 1);
+    const rawMax = peak * 1.6;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
+    const niceMax = Math.ceil(rawMax / magnitude) * magnitude;
+    const stepSize = niceMax / 5; // 5 grid lines
 
     chartInstance = new Chart(canvas, {
         type: 'line',
@@ -324,18 +241,19 @@ function renderChart(labels, data) {
                 },
                 y: {
                     beginAtZero: true,
+                    max: niceMax,
                     grid: { color: 'rgba(0,0,0,0.05)' },
                     ticks: {
                         font: { size: 11 },
                         color: '#7f8c8d',
-                        callback: v => `₱${v}`
+                        stepSize,
+                        callback: v => `₱${v % 1 === 0 ? v : v.toFixed(2)}`
                     }
                 }
             }
         }
     });
 
-    // Show empty state if no data
     const emptyEl = document.getElementById('chartEmpty');
     if (emptyEl) emptyEl.style.display = hasData ? 'none' : 'flex';
 }
@@ -368,3 +286,234 @@ function setText(id, value) {
 
 // ── Init ──
 loadChartData('daily');
+
+// ══════════════════════════════════════════
+// RECEIPT — accounting-style daily receipt
+// ══════════════════════════════════════════
+window.openReceipt = async () => {
+    const modal   = document.getElementById('receiptModal');
+    const content = document.getElementById('receiptContent');
+    if (!modal || !content) return;
+    modal.style.display = 'flex';
+    content.innerHTML   = '<p style="text-align:center;color:#94a3b8;">Generating receipt...</p>';
+
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const { data } = await supabase
+        .from('tax_dscrpt_summary')
+        .select('vendor_name, vendor_stall_name, area, product_services, tax_recorded, officials_name, collection_date')
+        .eq('collection_date', todayStr)
+        .not('tax_recorded', 'is', null)
+        .order('area', { ascending: true });
+
+    const rows  = data || [];
+    const total = rows.reduce((s, r) => s + (parseFloat(r.tax_recorded) || 0), 0);
+    const now   = new Date().toLocaleString('en-US', { dateStyle:'long', timeStyle:'short' });
+
+    // Group by building/area
+    const grouped = {};
+    rows.forEach(r => {
+        if (!grouped[r.area]) grouped[r.area] = [];
+        grouped[r.area].push(r);
+    });
+
+    const divider = `<div style="border-top:1px dashed #ccc;margin:8px 0;"></div>`;
+    let body = '';
+    for (const [area, items] of Object.entries(grouped)) {
+        body += `<div style="font-weight:800;color:#224263;font-size:12px;margin:10px 0 4px;
+                             letter-spacing:1px;text-transform:uppercase;">── ${area} ──</div>`;
+        items.forEach(r => {
+            body += `<div style="display:flex;justify-content:space-between;font-size:12px;margin:3px 0;">
+                <span>${r.vendor_name} <span style="color:#94a3b8;font-size:10px;">(${r.product_services})</span></span>
+                <span style="font-weight:700;color:#27ae60;">₱${parseFloat(r.tax_recorded).toFixed(2)}</span>
+            </div>`;
+        });
+    }
+
+    content.innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:18px;font-weight:800;color:#224263;letter-spacing:2px;">PMACS</div>
+            <div style="font-size:11px;color:#94a3b8;">PUBLIC MARKET ADMINISTRATION</div>
+            <div style="font-size:11px;color:#94a3b8;">COLLECTION SYSTEM</div>
+            ${divider}
+            <div style="font-size:12px;font-weight:700;color:#224263;">DAILY COLLECTION RECEIPT</div>
+            <div style="font-size:11px;color:#7f8c8d;">${now}</div>
+        </div>
+        ${divider}
+        ${body || '<div style="text-align:center;color:#94a3b8;font-size:12px;">No payments recorded today.</div>'}
+        ${divider}
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800;margin-top:8px;">
+            <span>TOTAL COLLECTED</span>
+            <span style="color:#27ae60;">₱${total.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#7f8c8d;margin-top:4px;">
+            <span>Vendors paid</span><span>${rows.length}</span>
+        </div>
+        ${rows[0] ? `<div style="font-size:10px;color:#94a3b8;margin-top:6px;">Collector: ${rows[0].officials_name}</div>` : ''}
+        ${divider}
+        <div style="text-align:center;font-size:10px;color:#bdc3c7;margin-top:8px;">
+            Generated by PMACS · ${todayStr}
+        </div>`;
+};
+
+window.printReceipt = () => {
+    const content = document.getElementById('receiptContent')?.innerHTML || '';
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>Receipt</title>
+        <style>body{font-family:'Courier New',monospace;padding:20px;max-width:400px;margin:auto;}
+        @media print{button{display:none}}</style></head>
+        <body>${content}</body></html>`);
+    w.document.close();
+    w.print();
+};
+
+// ══════════════════════════════════════════
+// HISTORY MODAL — collection & attendance history per date
+// ══════════════════════════════════════════
+let _historyData = [];
+let _historyMode = 'collection';
+
+window.openHistoryModal = async (mode) => {
+    _historyMode = mode;
+    const modal = document.getElementById('historyModal');
+    const title = document.getElementById('historyModalTitle');
+    const header = document.getElementById('historyModalHeader');
+    if (!modal) return;
+
+    title.textContent  = mode === 'collection' ? 'COLLECTION HISTORY' : 'ATTENDANCE HISTORY';
+    header.style.background = mode === 'collection' ? '#27ae60' : '#2971b9';
+    modal.style.display = 'flex';
+    document.getElementById('historyDateSearch').value = '';
+    document.getElementById('historyList').innerHTML = '<p style="text-align:center;color:#94a3b8;">Loading...</p>';
+
+    // Fetch last 60 days grouped by date
+    const start = new Date(); start.setDate(start.getDate() - 60);
+    const { data } = await supabase
+        .from('tax_dscrpt_summary')
+        .select('collection_date, tax_recorded, vendor_id, vendor_name, area, is_present')
+        .gte('collection_date', start.toISOString().split('T')[0])
+        .order('collection_date', { ascending: false });
+
+    _historyData = data || [];
+    window.filterHistory();
+};
+
+window.filterHistory = () => {
+    const search = document.getElementById('historyDateSearch')?.value;
+    const list   = document.getElementById('historyList');
+    if (!list) return;
+
+    let rows = _historyData;
+    if (search) rows = rows.filter(r => r.collection_date === search);
+
+    // Group by date
+    const byDate = {};
+    rows.forEach(r => {
+        if (!byDate[r.collection_date]) byDate[r.collection_date] = [];
+        byDate[r.collection_date].push(r);
+    });
+
+    const dates = Object.keys(byDate).sort((a,b) => b.localeCompare(a)).slice(0, 30);
+
+    if (!dates.length) {
+        list.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px;">No records found.</p>';
+        return;
+    }
+
+    list.innerHTML = dates.map(date => {
+        const dayRows  = byDate[date];
+        const paid     = dayRows.filter(r => r.tax_recorded !== null);
+        const total    = paid.reduce((s, r) => s + (parseFloat(r.tax_recorded) || 0), 0);
+        const dateLabel = new Date(date + 'T00:00:00')
+            .toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+
+        if (_historyMode === 'collection') {
+            // Group paid by area
+            const byArea = {};
+            paid.forEach(r => { if (!byArea[r.area]) byArea[r.area] = []; byArea[r.area].push(r); });
+            const areaRows = Object.entries(byArea).map(([area, items]) =>
+                `<div style="margin-top:6px;">
+                    <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:1px;">${area}</div>
+                    ${items.map(r => `<div style="display:flex;justify-content:space-between;font-size:12px;margin:2px 0;">
+                        <span style="color:#224263;">${r.vendor_name}</span>
+                        <span style="color:#27ae60;font-weight:700;">₱${parseFloat(r.tax_recorded).toFixed(2)}</span>
+                    </div>`).join('')}
+                </div>`
+            ).join('');
+
+            return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span style="font-weight:800;color:#224263;font-size:13px;">${dateLabel}</span>
+                    <span style="background:#f0fdf4;color:#27ae60;font-weight:800;font-size:13px;padding:3px 10px;border-radius:20px;">₱${total.toFixed(2)}</span>
+                </div>
+                ${areaRows || '<div style="font-size:12px;color:#94a3b8;">No payments</div>'}
+            </div>`;
+        } else {
+            const present = dayRows.filter(r => r.tax_recorded !== null).length;
+            const absent  = dayRows.length - present;
+            const pct     = dayRows.length ? Math.round((present / dayRows.length) * 100) : 0;
+            return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:800;color:#224263;font-size:13px;">${dateLabel}</span>
+                    <span style="background:#eff6ff;color:#2971b9;font-weight:800;font-size:13px;padding:3px 10px;border-radius:20px;">${pct}%</span>
+                </div>
+                <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;">
+                    <span><span style="color:#27ae60;font-weight:700;">●</span> Present: ${present}</span>
+                    <span><span style="color:#e74c3c;font-weight:700;">●</span> Absent: ${absent}</span>
+                    <span style="color:#94a3b8;">Total: ${dayRows.length}</span>
+                </div>
+            </div>`;
+        }
+    }).join('');
+};
+
+// ══════════════════════════════════════════
+// RECENT ACTIVITY — enhanced with collection-done detection
+// ══════════════════════════════════════════
+onValue(ref(rtdb, 'notifications'), (snapshot) => {
+    const listEl = document.getElementById('recent-activity-list');
+    if (!listEl) return;
+
+    const items = [];
+    if (snapshot.exists()) snapshot.forEach(c => items.push(c.val()));
+    items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const recent = items.slice(0, 5);
+
+    const colorMap = { info:'#2971b9', success:'#27ae60', warning:'#f39c12', error:'#e74c3c' };
+    const iconMap  = { info:'fa-info-circle', success:'fa-check-circle', warning:'fa-triangle-exclamation', error:'fa-circle-xmark' };
+
+    // Check if today's collection is done (all present vendors paid)
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const vendors  = window._todayStats || {};
+    const collectionDone = vendors.unpaidCount === 0 && vendors.paidCount > 0;
+
+    let html = '';
+    if (collectionDone) {
+        html += `<div class="notif-card" style="border-left:4px solid #27ae60;background:#f0fdf4;">
+            <div class="notif-info">
+                <p style="font-weight:800;color:#27ae60;margin-bottom:3px;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-circle-check"></i> Collection Complete!
+                </p>
+                <p style="color:#7f8c8d;font-size:13px;">All present vendors have paid for today.</p>
+                <span style="font-size:11px;color:#95a5a6;">${new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'})}</span>
+            </div>
+        </div>`;
+    }
+
+    html += recent.map(n => {
+        const color = colorMap[n.type] || '#2971b9';
+        const icon  = iconMap[n.type]  || 'fa-bell';
+        const time  = n.createdAt ? new Date(n.createdAt).toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' }) : '—';
+        return `<div class="notif-card ${n.read ? '' : 'unread'}" style="border-left:4px solid ${color};">
+            <div class="notif-info">
+                <p style="font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid ${icon}" style="color:${color};"></i>${n.title || 'Notification'}
+                </p>
+                <p style="color:#7f8c8d;font-size:13px;">${n.message || ''}</p>
+                <span style="font-size:11px;color:#95a5a6;">${time}</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    if (!html) html = `<div class="notif-card"><div class="notif-info"><p style="color:#7f8c8d;">No recent activity.</p></div></div>`;
+    listEl.innerHTML = html;
+});

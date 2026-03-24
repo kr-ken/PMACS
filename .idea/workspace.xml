@@ -8,19 +8,10 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/admin.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/notification/notification.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/notification/notification.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/tax_list/tax_list.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/admin_page/vendor_list/vendor.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/dashboard/dashboard.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.css" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/tax_collection/tax_collection.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/dashboard_vendor/dshbvendor.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/dashboard_vendor/dshbvendor.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/dashboard_vendor/dshbvendor.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/dashboard_vendor/dshbvendor.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/vendors_page.html" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/vendors_page.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/vendors_page.js" beforeDir="false" afterPath="$PROJECT_DIR$/pmacs_system_frenddvlp/vendor_details_page/vendors_page.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
