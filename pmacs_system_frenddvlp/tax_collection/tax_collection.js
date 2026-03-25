@@ -21,7 +21,14 @@ let allVendors      = [];
 let taxFeesLookup   = {};
 let cachedAmounts   = {};
 let currentOfficial = null;
-const today         = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+const today = (() => {
+    // Use LOCAL date (not UTC) so PH timezone doesn't shift the date before 8AM
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`; // YYYY-MM-DD local
+})();
 
 // ══════════════════════════════════════════
 // INIT
@@ -150,11 +157,19 @@ async function loadFirebaseState() {
         const snap = await get(ref(rtdb, 'vendor_realtime'));
         if (!snap.exists()) return;
 
-        // Build lookup: vendor_id → today's record only
         const todayMap = {};
         snap.forEach(child => {
             const d = child.val();
-            if (d.collection_date !== today) return; // skip other days
+            // Primary: use collection_date field (new format)
+            if (d.collection_date) {
+                if (d.collection_date !== today) return;
+            } else {
+                // Fallback: old format without collection_date — use timestamp
+                if (!d.timestamp) return;
+                const ts = new Date(d.timestamp);
+                const tsDate = `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`;
+                if (tsDate !== today) return;
+            }
             todayMap[String(d.vendor_id)] = d;
         });
 
@@ -163,6 +178,8 @@ async function loadFirebaseState() {
             if (!fb) return v;
             return { ...v, isPresent: !!fb.is_present, hasPaid: !!fb.has_paid, paidAmount: parseFloat(fb.amount_paid) || 0 };
         });
+
+        console.log(`[Firebase] Restored ${Object.keys(todayMap).length} vendor states for ${today}`);
     } catch (e) { console.error("loadFirebaseState:", e.message); }
 }
 
@@ -173,18 +190,22 @@ async function loadFirebaseState() {
 async function syncToFirebase(vendor) {
     const fee = getFee(vendor);
     const key = `${vendor.vendor_id}_${today}`;
-    await set(ref(rtdb, `vendor_realtime/${key}`), {
-        vendor_id:        String(vendor.vendor_id),
-        vendor_name:      vendor.vendor_name,
-        stall_area:       vendor.vendor_stall_area || 'N/A',
-        product_services: vendor.product_services,
-        tax_reference:    fee.range || 'N/A',
-        is_present:       !!vendor.isPresent,
-        has_paid:         !!vendor.hasPaid,
-        amount_paid:      parseFloat(vendor.paidAmount) || 0,
-        timestamp:        Date.now(),
-        collection_date:  today,
-    });
+    try {
+        await set(ref(rtdb, `vendor_realtime/${key}`), {
+            vendor_id:        String(vendor.vendor_id),
+            vendor_name:      vendor.vendor_name,
+            stall_area:       vendor.vendor_stall_area || 'N/A',
+            product_services: vendor.product_services,
+            tax_reference:    fee.range || 'N/A',
+            is_present:       !!vendor.isPresent,
+            has_paid:         !!vendor.hasPaid,
+            amount_paid:      parseFloat(vendor.paidAmount) || 0,
+            timestamp:        Date.now(),
+            collection_date:  today,
+        });
+    } catch (e) {
+        console.error(`syncToFirebase failed for vendor ${vendor.vendor_id}:`, e.message);
+    }
 }
 
 // ══════════════════════════════════════════
@@ -669,12 +690,29 @@ window.confirmUpload = async (proceed) => {
 
 async function executeUpload() {
     showNotif("Uploading records...", "info");
-    let uploaded = 0;
+    let uploaded = 0, failed = 0;
     for (const v of allVendors) {
-        await syncToFirebase(v);
-        if (v.hasPaid && v.paidAmount > 0) { await upsertToSupabase(v, v.paidAmount); uploaded++; }
+        try {
+            await syncToFirebase(v);
+        } catch(e) {
+            console.error('syncToFirebase error for', v.vendor_name, e.message);
+            failed++;
+        }
+        if (v.hasPaid && v.paidAmount > 0) {
+            try {
+                await upsertToSupabase(v, v.paidAmount);
+                uploaded++;
+            } catch(e) {
+                console.error('upsertToSupabase error for', v.vendor_name, e.message);
+                failed++;
+            }
+        }
     }
-    showNotif(`✓ ${uploaded} payment${uploaded !== 1 ? 's' : ''} uploaded!`, "success");
+    if (failed > 0) {
+        showNotif(`⚠ ${uploaded} uploaded, ${failed} failed — check console`, "error");
+    } else {
+        showNotif(`✓ ${uploaded} payment${uploaded !== 1 ? 's' : ''} uploaded!`, "success");
+    }
 }
 
 // ══════════════════════════════════════════

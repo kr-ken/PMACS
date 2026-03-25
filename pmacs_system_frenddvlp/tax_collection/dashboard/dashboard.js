@@ -174,7 +174,10 @@ async function loadChartData(tab) {
             d.setDate(today.getDate() - i);
             labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
         }
-        groupFn = (date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        groupFn = (dateStr) => {
+            const [y,m,d] = dateStr.split('-');
+            return new Date(+y,+m-1,+d).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+        };
 
     } else if (tab === 'weekly') {
         // Last 6 weeks
@@ -204,13 +207,17 @@ async function loadChartData(tab) {
             d.setMonth(today.getMonth() - i);
             labels.push(d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
         }
-        groupFn = (date) => new Date(date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        groupFn = (dateStr) => {
+            const [y,m,d] = dateStr.split('-');
+            return new Date(+y,+m-1,+d).toLocaleDateString('en-US', { month:'long', year:'numeric' });
+        };
     }
 
     const { data, error } = await supabase
         .from('tax_dscrpt_summary')
         .select('collection_date, tax_recorded')
         .gte('collection_date', startDate.toISOString().split('T')[0])
+        .not('tax_recorded', 'is', null)
         .order('collection_date', { ascending: true });
 
     if (error) { console.error('loadChartData:', error.message); return; }
@@ -230,10 +237,15 @@ async function loadChartData(tab) {
 function renderChart(labels, data) {
     const canvas = document.getElementById('collectionChart');
     if (!canvas) return;
-
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-
     const hasData = data.some(v => v > 0);
+
+    // Smart Y-axis: peak × 1.6, rounded to nice interval
+    const peak = Math.max(...data, 1);
+    const rawMax = peak * 1.6;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
+    const niceMax  = Math.ceil(rawMax / magnitude) * magnitude;
+    const stepSize = niceMax / 5;
 
     chartInstance = new Chart(canvas, {
         type: 'line',
@@ -256,31 +268,25 @@ function renderChart(labels, data) {
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => ` ₱${ctx.parsed.y.toFixed(2)}`
-                    }
-                }
+                tooltip: { callbacks: { label: ctx => ` ₱${ctx.parsed.y.toFixed(2)}` }}
             },
             scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { font: { size: 11 }, color: '#7f8c8d' }
-                },
+                x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#7f8c8d' }},
                 y: {
                     beginAtZero: true,
+                    max: niceMax,
                     grid: { color: 'rgba(0,0,0,0.05)' },
                     ticks: {
                         font: { size: 11 },
                         color: '#7f8c8d',
-                        callback: v => `₱${v}`
+                        stepSize,
+                        callback: v => `₱${v % 1 === 0 ? v : v.toFixed(2)}`
                     }
                 }
             }
         }
     });
 
-    // Show empty state if no data
     const emptyEl = document.getElementById('chartEmpty');
     if (emptyEl) emptyEl.style.display = hasData ? 'none' : 'flex';
 }

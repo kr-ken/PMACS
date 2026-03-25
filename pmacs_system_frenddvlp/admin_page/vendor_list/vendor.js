@@ -668,4 +668,9 @@ async function loadProducts(area) {
     const { data } = await supabase.from('collection_fees').select('product_services').eq('area', area);
     select.innerHTML = '<option value="">Select Service</option>' + (data || []).map(i => `<option value="${i.product_services}">${i.product_services.toUpperCase()}</option>`).join('');
     select.disabled = false;
+
+window.handleLogout = () => {
+    sessionStorage.clear();
+    window.location.href = "../login_page/login.html";
+    };
 }

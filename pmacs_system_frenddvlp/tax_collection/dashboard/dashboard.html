@@ -138,32 +138,30 @@
                     <div class="legend-item"><span class="legend-color" style="background:#f39c12;"></span><span class="legend-text">Debts Cleared</span></div>
                     <div class="legend-item"><span class="legend-color pending"></span><span class="legend-text">Pending</span></div>
                 </div>
-                <div class="legend-item"><span class="legend-color pending"></span><span class="legend-text">Pending</span></div>
             </div>
         </div>
-    </div>
 
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon attendance"><i class="fa-solid fa-users"></i></div>
-            <div class="stat-label">ATTENDANCE</div>
-        </div>
-        <div class="stat-content">
-            <div class="pie-chart-container">
-                <svg class="pie-chart" viewBox="0 0 100 100">
-                    <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
-                    <circle class="pie-present" cx="50" cy="50" r="40" id="pie-attendance" style="stroke-dasharray:0 251.33;"></circle>
-                </svg>
-                <div class="pie-center">
-                    <span class="pie-value" id="stat-attendance-pie">—</span>
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon attendance"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-label">ATTENDANCE</div>
+            </div>
+            <div class="stat-content">
+                <div class="pie-chart-container">
+                    <svg class="pie-chart" viewBox="0 0 100 100">
+                        <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
+                        <circle class="pie-present" cx="50" cy="50" r="40" id="pie-attendance" style="stroke-dasharray:0 251.33;"></circle>
+                    </svg>
+                    <div class="pie-center">
+                        <span class="pie-value" id="stat-attendance-pie">—</span>
+                    </div>
+                </div>
+                <div class="pie-legend">
+                    <div class="legend-item"><span class="legend-color present"></span><span class="legend-text">Present: <strong id="legend-present-pie">0</strong></span></div>
+                    <div class="legend-item"><span class="legend-color absent"></span><span class="legend-text">Absent: <strong id="legend-absent-pie">0</strong></span></div>
                 </div>
             </div>
-            <div class="pie-legend">
-                <div class="legend-item"><span class="legend-color present"></span><span class="legend-text">Present: <strong id="legend-present-pie">0</strong></span></div>
-                <div class="legend-item"><span class="legend-color absent"></span><span class="legend-text">Absent: <strong id="legend-absent-pie">0</strong></span></div>
-            </div>
         </div>
-    </div>
     </div>
 
 </main>
