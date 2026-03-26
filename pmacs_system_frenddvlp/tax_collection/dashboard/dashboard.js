@@ -51,13 +51,14 @@ function initPie(id) {
 initPie("pie-collected");
 initPie("pie-attendance");
 
-// ── Tab switching ──
+// ── Tab switching — Daily only ──
 window.switchTab = (tab) => {
     currentTab = tab;
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
     });
-    loadChartData(tab);
+    // Re-render chart with current today data
+    if (window._todayVendors) renderTodayChart(window._todayVendors);
 };
 
 // ── RTDB: live today stats ──
@@ -66,9 +67,17 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
 
     if (!snapshot.exists()) { resetCollectorStats(); return; }
 
-    const vendors = Object.values(snapshot.val()).filter(v =>
-        v.timestamp && new Date(v.timestamp).toLocaleDateString('en-CA') === todayStr
-    );
+    const vendors = Object.values(snapshot.val()).filter(v => {
+        // New format: collection_date field (local date string)
+        if (v.collection_date) return v.collection_date === todayStr;
+        // Old format fallback: derive local date from timestamp
+        if (v.timestamp) {
+            const ts = new Date(v.timestamp);
+            const local = `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`;
+            return local === todayStr;
+        }
+        return false;
+    });
     if (!vendors.length) { resetCollectorStats(); return; }
 
     let totalCollected = 0, totalToCollect = 0;
@@ -92,6 +101,7 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
     const attendancePct  = totalVendors   > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
 
     window._collectorTodayStats = { totalCollected, totalToCollect, collectedPct, paidCount, unpaidCount, presentCount, absentCount, totalAbsentDues, attendancePct };
+    window._todayVendors = vendors; // save for chart re-render
 
     setText("stat-total-money",      `₱${totalCollected.toFixed(2)}`);
     setText("stat-total-money-pie",  `₱${totalCollected.toFixed(2)}`);
@@ -112,6 +122,7 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
     setText("card-unpaid-count",     unpaidCount);
     updateMiniBar(paidCount, unpaidCount);
 
+    renderTodayChart(vendors);
     loadCollectorDebt();
 }, (err) => console.error('[Dashboard] RTDB error:', err.message));
 
@@ -159,88 +170,36 @@ function updatePieTwo(greenId, yellowId, greenPct, yellowPct) {
     }
 }
 
-// ── Supabase: historical chart data ──
-async function loadChartData(tab) {
-    const today = new Date();
-    let startDate, labels, groupFn;
-
-    if (tab === 'daily') {
-        // Last 7 days
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 6);
-        labels = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(today.getDate() - i);
-            labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        }
-        groupFn = (dateStr) => {
-            const [y,m,d] = dateStr.split('-');
-            return new Date(+y,+m-1,+d).toLocaleDateString('en-US', { month:'short', day:'numeric' });
-        };
-
-    } else if (tab === 'weekly') {
-        // Last 6 weeks
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 41);
-        labels = [];
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(today.getDate() - i * 7);
-            labels.push(`Week of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
-        }
-        groupFn = (date) => {
-            const d = new Date(date);
-            const diff = Math.floor((today - d) / (7 * 24 * 60 * 60 * 1000));
-            const weekIdx = 5 - Math.min(diff, 5);
-            return labels[weekIdx];
-        };
-
-    } else {
-        // Last 6 months
-        startDate = new Date(today);
-        startDate.setMonth(today.getMonth() - 5);
-        startDate.setDate(1);
-        labels = [];
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date(today);
-            d.setMonth(today.getMonth() - i);
-            labels.push(d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
-        }
-        groupFn = (dateStr) => {
-            const [y,m,d] = dateStr.split('-');
-            return new Date(+y,+m-1,+d).toLocaleDateString('en-US', { month:'long', year:'numeric' });
-        };
-    }
-
-    const { data, error } = await supabase
-        .from('tax_dscrpt_summary')
-        .select('collection_date, tax_recorded')
-        .gte('collection_date', startDate.toISOString().split('T')[0])
-        .not('tax_recorded', 'is', null)
-        .order('collection_date', { ascending: true });
-
-    if (error) { console.error('loadChartData:', error.message); return; }
-
-    // Group by label
-    const collected = {};
-    labels.forEach(l => collected[l] = 0);
-    (data || []).forEach(row => {
-        const label = groupFn(row.collection_date);
-        if (label in collected) collected[label] += parseFloat(row.tax_recorded) || 0;
-    });
-
-    renderChart(labels, labels.map(l => collected[l]));
-}
-
-// ── Chart.js area chart ──
-function renderChart(labels, data) {
+// ══════════════════════════════════════════
+// TODAY'S CHART — bar chart of paid vendors from Firebase
+// Groups paid vendors by building/area, shows ₱ per area
+// ══════════════════════════════════════════
+function renderTodayChart(vendors) {
     const canvas = document.getElementById('collectionChart');
     if (!canvas) return;
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-    const hasData = data.some(v => v > 0);
 
-    // Smart Y-axis: peak × 1.6, rounded to nice interval
+    // Group paid vendors by area
+    const areaMap = {};
+    vendors.forEach(v => {
+        if (v.is_present && v.has_paid && parseFloat(v.amount_paid) > 0) {
+            const area = v.stall_area || 'Unknown';
+            areaMap[area] = (areaMap[area] || 0) + parseFloat(v.amount_paid);
+        }
+    });
+
+    const labels = Object.keys(areaMap);
+    const data   = Object.values(areaMap);
+    const hasData = data.length > 0 && data.some(v => v > 0);
+
+    const emptyEl = document.getElementById('chartEmpty');
+
+    if (!hasData) {
+        if (emptyEl) emptyEl.style.display = 'flex';
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
     const peak = Math.max(...data, 1);
     const rawMax = peak * 1.6;
     const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
@@ -248,19 +207,16 @@ function renderChart(labels, data) {
     const stepSize = niceMax / 5;
 
     chartInstance = new Chart(canvas, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels,
             datasets: [{
                 label: 'Collected (₱)',
                 data,
-                borderColor: '#27ae60',
-                backgroundColor: 'rgba(39,174,96,0.12)',
-                pointBackgroundColor: '#27ae60',
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                fill: true,
-                tension: 0.4,
+                backgroundColor: labels.map(() => 'rgba(39,174,96,0.75)'),
+                borderColor:     labels.map(() => '#27ae60'),
+                borderWidth: 2,
+                borderRadius: 6,
             }]
         },
         options: {
@@ -271,24 +227,21 @@ function renderChart(labels, data) {
                 tooltip: { callbacks: { label: ctx => ` ₱${ctx.parsed.y.toFixed(2)}` }}
             },
             scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#7f8c8d' }},
+                x: { grid: { display: false }, ticks: { font: { size: 12, weight: '600' }, color: '#2c3e50' }},
                 y: {
-                    beginAtZero: true,
-                    max: niceMax,
+                    beginAtZero: true, max: niceMax,
                     grid: { color: 'rgba(0,0,0,0.05)' },
-                    ticks: {
-                        font: { size: 11 },
-                        color: '#7f8c8d',
-                        stepSize,
-                        callback: v => `₱${v % 1 === 0 ? v : v.toFixed(2)}`
-                    }
+                    ticks: { font: { size: 11 }, color: '#7f8c8d', stepSize, callback: v => `₱${v}` }
                 }
             }
         }
     });
+}
 
+// ── Init chart on load with empty state ──
+function initEmptyChart() {
     const emptyEl = document.getElementById('chartEmpty');
-    if (emptyEl) emptyEl.style.display = hasData ? 'none' : 'flex';
+    if (emptyEl) emptyEl.style.display = 'flex';
 }
 
 // ── Mini bar for paid vs unpaid ──
@@ -318,4 +271,4 @@ function setText(id, value) {
 }
 
 // ── Init ──
-loadChartData('daily');
+initEmptyChart();

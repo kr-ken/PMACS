@@ -91,24 +91,19 @@
         </div>
     </div>
 
-    <!-- ── Row 2: Collection chart ── -->
+    <!-- ── Row 2: Today's collection chart ── -->
     <div class="stat-card chart-card">
         <div class="chart-header">
             <div>
-                <div class="stat-label">COLLECTION TREND</div>
-                <div class="chart-sub">Total tax collected over time</div>
-            </div>
-            <div class="tab-group">
-                <button class="tab-btn active" data-tab="daily"   onclick="window.switchTab('daily')">Daily</button>
-                <button class="tab-btn"        data-tab="weekly"  onclick="window.switchTab('weekly')">Weekly</button>
-                <button class="tab-btn"        data-tab="monthly" onclick="window.switchTab('monthly')">Monthly</button>
+                <div class="stat-label">TODAY'S COLLECTION</div>
+                <div class="chart-sub">Paid amounts by building area</div>
             </div>
         </div>
         <div class="chart-wrapper">
             <canvas id="collectionChart"></canvas>
             <div id="chartEmpty" class="chart-empty" style="display:none;">
-                <i class="fa-solid fa-chart-line"></i>
-                <p>No collection data yet</p>
+                <i class="fa-solid fa-chart-bar"></i>
+                <p>No payments recorded yet today</p>
             </div>
         </div>
     </div>

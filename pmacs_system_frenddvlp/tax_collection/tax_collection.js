@@ -757,6 +757,18 @@ function showNotif(msg, type = 'success') {
     setTimeout(() => n.remove(), 3000);
 }
 
+// From tax_collection.js - this function creates the combined, date-specific record key
+async function syncToFirebase(vendor) {
+    const fee = getFee(vendor);
+    const key = `${vendor.vendor_id}_${today}`; // <-- THIS IS THE FIX. It combines vendor ID and today's date
+    try {
+        await set(ref(rtdb, `vendor_realtime/${key}`), {
+            // ... all data object properties go here ...
+            timestamp:        Date.now(),
+            collection_date:  today, // and we include the date field inside the object too
+        });
+    } catch (e) { console.error(`syncToFirebase error:`, e.message); }
+}
 // ══════════════════════════════════════════
 // SEARCH
 // ══════════════════════════════════════════
