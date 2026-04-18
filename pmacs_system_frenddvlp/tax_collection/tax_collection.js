@@ -1,5 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import {
+    getFirestore, doc, setDoc, getDoc, getDocs, collection
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const firebaseConfig = {
@@ -14,21 +16,31 @@ const firebaseConfig = {
 const supabaseUrl = 'https://kbrwqixrbxlmopyxbrnj.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA';
 
-const rtdb     = getDatabase(initializeApp(firebaseConfig));
+const db      = getFirestore(initializeApp(firebaseConfig));
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 let allVendors      = [];
 let taxFeesLookup   = {};
 let cachedAmounts   = {};
 let currentOfficial = null;
+
+// ── Local date helpers ──
+// today = YYYY-MM-DD (local PH time, no UTC shift)
 const today = (() => {
-    // Use LOCAL date (not UTC) so PH timezone doesn't shift the date before 8AM
     const d = new Date();
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`; // YYYY-MM-DD local
+    return `${y}-${m}-${day}`;
 })();
+
+// Firestore collection name for today: e.g. "4182026pmacsdgte"
+// Format: M (no leading zero) + D (no leading zero) + YYYY + "pmacsdgte"
+function getTodayCollection() {
+    const d = new Date();
+    return `${d.getMonth()+1}${d.getDate()}${d.getFullYear()}pmacsdgte`;
+}
+const todayCollection = getTodayCollection();
 
 // ══════════════════════════════════════════
 // INIT
@@ -148,28 +160,18 @@ async function loadCachedAmounts() {
 }
 
 // ══════════════════════════════════════════
-// RESTORE TODAY'S SESSION from Firebase
-// Key format: vendor_id_YYYY-MM-DD
-// Filter by collection_date field
+// RESTORE TODAY'S SESSION from Firestore
+// Reads from today's dated collection e.g. "4182026pmacsdgte"
+// Document ID = vendor_id (string)
 // ══════════════════════════════════════════
 async function loadFirebaseState() {
     try {
-        const snap = await get(ref(rtdb, 'vendor_realtime'));
-        if (!snap.exists()) return;
+        const snap = await getDocs(collection(db, todayCollection));
+        if (snap.empty) { console.log(`[Firestore] No session data in ${todayCollection}`); return; }
 
         const todayMap = {};
-        snap.forEach(child => {
-            const d = child.val();
-            // Primary: use collection_date field (new format)
-            if (d.collection_date) {
-                if (d.collection_date !== today) return;
-            } else {
-                // Fallback: old format without collection_date — use timestamp
-                if (!d.timestamp) return;
-                const ts = new Date(d.timestamp);
-                const tsDate = `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`;
-                if (tsDate !== today) return;
-            }
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
             todayMap[String(d.vendor_id)] = d;
         });
 
@@ -178,23 +180,23 @@ async function loadFirebaseState() {
             if (!fb) return v;
             return { ...v, isPresent: !!fb.is_present, hasPaid: !!fb.has_paid, paidAmount: parseFloat(fb.amount_paid) || 0 };
         });
-
-        console.log(`[Firebase] Restored ${Object.keys(todayMap).length} vendor states for ${today}`);
+        console.log(`[Firestore] Restored ${Object.keys(todayMap).length} vendor states from ${todayCollection}`);
     } catch (e) { console.error("loadFirebaseState:", e.message); }
 }
 
 // ══════════════════════════════════════════
-// FIREBASE WRITE
-// Key: vendor_id_YYYY-MM-DD → history accumulates per day
+// FIRESTORE WRITE
+// Collection: "4182026pmacsdgte" (today's date + suffix)
+// Document:   vendor_id (string)
+// Creates a new collection per day automatically
 // ══════════════════════════════════════════
 async function syncToFirebase(vendor) {
     const fee = getFee(vendor);
-    const key = `${vendor.vendor_id}_${today}`;
     try {
-        await set(ref(rtdb, `vendor_realtime/${key}`), {
+        await setDoc(doc(db, todayCollection, String(vendor.vendor_id)), {
             vendor_id:        String(vendor.vendor_id),
             vendor_name:      vendor.vendor_name,
-            stall_area:       vendor.vendor_stall_area || 'N/A',
+            stall_area:       vendor.vendor_stall_area  || 'N/A',
             product_services: vendor.product_services,
             tax_reference:    fee.range || 'N/A',
             is_present:       !!vendor.isPresent,
@@ -757,18 +759,6 @@ function showNotif(msg, type = 'success') {
     setTimeout(() => n.remove(), 3000);
 }
 
-// From tax_collection.js - this function creates the combined, date-specific record key
-async function syncToFirebase(vendor) {
-    const fee = getFee(vendor);
-    const key = `${vendor.vendor_id}_${today}`; // <-- THIS IS THE FIX. It combines vendor ID and today's date
-    try {
-        await set(ref(rtdb, `vendor_realtime/${key}`), {
-            // ... all data object properties go here ...
-            timestamp:        Date.now(),
-            collection_date:  today, // and we include the date field inside the object too
-        });
-    } catch (e) { console.error(`syncToFirebase error:`, e.message); }
-}
 // ══════════════════════════════════════════
 // SEARCH
 // ══════════════════════════════════════════

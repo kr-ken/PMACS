@@ -1,5 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import {
+    getFirestore, collection, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const firebaseConfig = {
@@ -11,13 +13,18 @@ const firebaseConfig = {
     messagingSenderId: "73881840540",
     appId: "1:73881840540:web:d8194aec335cbfcf527659",
 };
-
 const supabaseUrl = 'https://kbrwqixrbxlmopyxbrnj.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticndxaXhyYnhsbW9weXhicm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjYzMDEsImV4cCI6MjA4NTc0MjMwMX0.2eaz8RqCAEeBuljppI_ynA0oaYbepER3LdX8oF3iWiA';
 
-const app = initializeApp(firebaseConfig);
-const rtdb = getDatabase(app);
+const db      = getFirestore(initializeApp(firebaseConfig));
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Today's Firestore collection name: e.g. "4182026pmacsdgte"
+function getTodayCollection() {
+    const d = new Date();
+    return `${d.getMonth()+1}${d.getDate()}${d.getFullYear()}pmacsdgte`;
+}
+const todayCollection = getTodayCollection();
 
 const CIRCUMFERENCE = 2 * Math.PI * 40;
 let currentTab = 'daily';
@@ -51,33 +58,20 @@ function initPie(id) {
 initPie("pie-collected");
 initPie("pie-attendance");
 
-// ── Tab switching — Daily only ──
-window.switchTab = (tab) => {
-    currentTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tab);
-    });
-    // Re-render chart with current today data
-    if (window._todayVendors) renderTodayChart(window._todayVendors);
-};
 
-// ── RTDB: live today stats ──
-onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
-    const todayStr = new Date().toLocaleDateString('en-CA');
+// ── No tabs needed - chart is today-only ──
+window.switchTab = () => {}; // kept for HTML compatibility, does nothing
 
-    if (!snapshot.exists()) { resetCollectorStats(); return; }
 
-    const vendors = Object.values(snapshot.val()).filter(v => {
-        // New format: collection_date field (local date string)
-        if (v.collection_date) return v.collection_date === todayStr;
-        // Old format fallback: derive local date from timestamp
-        if (v.timestamp) {
-            const ts = new Date(v.timestamp);
-            const local = `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`;
-            return local === todayStr;
-        }
-        return false;
-    });
+// ══════════════════════════════════════════
+// FIRESTORE: live today stats
+// Listens to today's dated collection e.g. "4182026pmacsdgte"
+// ══════════════════════════════════════════
+onSnapshot(collection(db, todayCollection), (snapshot) => {
+    if (snapshot.empty) { resetCollectorStats(); return; }
+
+    const vendors = [];
+    snapshot.forEach(docSnap => vendors.push(docSnap.data()));
     if (!vendors.length) { resetCollectorStats(); return; }
 
     let totalCollected = 0, totalToCollect = 0;
@@ -101,7 +95,7 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
     const attendancePct  = totalVendors   > 0 ? Math.round((presentCount / totalVendors) * 100) : 0;
 
     window._collectorTodayStats = { totalCollected, totalToCollect, collectedPct, paidCount, unpaidCount, presentCount, absentCount, totalAbsentDues, attendancePct };
-    window._todayVendors = vendors; // save for chart re-render
+    window._todayVendors = vendors;
 
     setText("stat-total-money",      `₱${totalCollected.toFixed(2)}`);
     setText("stat-total-money-pie",  `₱${totalCollected.toFixed(2)}`);
@@ -124,7 +118,7 @@ onValue(ref(rtdb, 'vendor_realtime'), (snapshot) => {
 
     renderTodayChart(vendors);
     loadCollectorDebt();
-}, (err) => console.error('[Dashboard] RTDB error:', err.message));
+});
 
 async function loadCollectorDebt() {
     const todayStr = new Date().toLocaleDateString('en-CA');
@@ -171,15 +165,14 @@ function updatePieTwo(greenId, yellowId, greenPct, yellowPct) {
 }
 
 // ══════════════════════════════════════════
-// TODAY'S CHART — bar chart of paid vendors from Firebase
-// Groups paid vendors by building/area, shows ₱ per area
+// TODAY'S CHART — bar chart per building area from Firestore
 // ══════════════════════════════════════════
 function renderTodayChart(vendors) {
     const canvas = document.getElementById('collectionChart');
     if (!canvas) return;
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
-    // Group paid vendors by area
+    // Group paid vendors by stall area
     const areaMap = {};
     vendors.forEach(v => {
         if (v.is_present && v.has_paid && parseFloat(v.amount_paid) > 0) {
@@ -190,14 +183,10 @@ function renderTodayChart(vendors) {
 
     const labels = Object.keys(areaMap);
     const data   = Object.values(areaMap);
-    const hasData = data.length > 0 && data.some(v => v > 0);
+    const hasData = labels.length > 0;
 
     const emptyEl = document.getElementById('chartEmpty');
-
-    if (!hasData) {
-        if (emptyEl) emptyEl.style.display = 'flex';
-        return;
-    }
+    if (!hasData) { if (emptyEl) emptyEl.style.display = 'flex'; return; }
     if (emptyEl) emptyEl.style.display = 'none';
 
     const peak = Math.max(...data, 1);
@@ -213,35 +202,29 @@ function renderTodayChart(vendors) {
             datasets: [{
                 label: 'Collected (₱)',
                 data,
-                backgroundColor: labels.map(() => 'rgba(39,174,96,0.75)'),
-                borderColor:     labels.map(() => '#27ae60'),
+                backgroundColor: 'rgba(39,174,96,0.75)',
+                borderColor: '#27ae60',
                 borderWidth: 2,
                 borderRadius: 6,
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
                 tooltip: { callbacks: { label: ctx => ` ₱${ctx.parsed.y.toFixed(2)}` }}
             },
             scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 12, weight: '600' }, color: '#2c3e50' }},
+                x: { grid: { display: false }, ticks: { font: { size: 12, weight: '600' }, color: '#224263' }},
                 y: {
                     beginAtZero: true, max: niceMax,
                     grid: { color: 'rgba(0,0,0,0.05)' },
-                    ticks: { font: { size: 11 }, color: '#7f8c8d', stepSize, callback: v => `₱${v}` }
+                    ticks: { font: { size: 11 }, color: '#7f8c8d', stepSize,
+                             callback: v => `₱${v % 1 === 0 ? v : v.toFixed(2)}` }
                 }
             }
         }
     });
-}
-
-// ── Init chart on load with empty state ──
-function initEmptyChart() {
-    const emptyEl = document.getElementById('chartEmpty');
-    if (emptyEl) emptyEl.style.display = 'flex';
 }
 
 // ── Mini bar for paid vs unpaid ──
@@ -270,5 +253,6 @@ function setText(id, value) {
     if (el) el.textContent = value;
 }
 
-// ── Init ──
-initEmptyChart();
+// ── Init — show empty chart until Firestore data arrives ──
+const emptyEl = document.getElementById('chartEmpty');
+if (emptyEl) emptyEl.style.display = 'flex';
